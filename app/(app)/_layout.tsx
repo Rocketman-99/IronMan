@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -11,22 +11,23 @@ export default function AppLayout() {
   const db = useSQLiteContext();
   const { profile, loadProfile } = useProfileStore();
   const { initialize } = useAppStore();
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     async function boot() {
       await initialize();
       await loadProfile(db);
+      setIsReady(true);
     }
     boot();
   }, []);
 
   useEffect(() => {
-    if (profile !== undefined && profile !== null && !profile.onboarding_done) {
-      router.replace('/(onboarding)');
-    } else if (profile === null) {
+    if (!isReady) return;
+    if (!profile || !profile.onboarding_done) {
       router.replace('/(onboarding)');
     }
-  }, [profile]);
+  }, [isReady, profile]);
 
   return (
     <Tabs
