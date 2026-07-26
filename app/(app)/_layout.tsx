@@ -1,70 +1,54 @@
-import { Tabs } from 'expo-router';
+import { useEffect } from 'react';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSQLiteContext } from 'expo-sqlite';
 import { colors } from '../../src/utils/theme';
+import { useProfileStore } from '../../src/stores/profileStore';
+import { useAppStore } from '../../src/stores/appStore';
 
 export default function AppLayout() {
+  const router = useRouter();
+  const db = useSQLiteContext();
+  const { profile, loadProfile } = useProfileStore();
+  const { initialize } = useAppStore();
+
+  useEffect(() => {
+    async function boot() {
+      await initialize();
+      await loadProfile(db);
+    }
+    boot();
+  }, []);
+
+  useEffect(() => {
+    if (profile !== undefined && profile !== null && !profile.onboarding_done) {
+      router.replace('/(onboarding)');
+    } else if (profile === null) {
+      router.replace('/(onboarding)');
+    }
+  }, [profile]);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopColor: colors.divider,
+          borderTopColor: colors.cardBorder,
           borderTopWidth: 1,
-          height: 80,
-          paddingBottom: 16,
-          paddingTop: 8,
+          height: 60,
+          paddingBottom: 8,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: '홈',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="log"
-        options={{
-          title: '기록',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="history"
-        options={{
-          title: '히스토리',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="progress"
-        options={{
-          title: '성장',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="trending-up-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="goals"
-        options={{
-          title: '목표',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="flag-outline" size={size} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: '대시보드', tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} /> }} />
+      <Tabs.Screen name="log" options={{ title: '기록', tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" size={size} color={color} /> }} />
+      <Tabs.Screen name="history" options={{ title: '역사', tabBarIcon: ({ color, size }) => <Ionicons name="list" size={size} color={color} /> }} />
+      <Tabs.Screen name="progress" options={{ title: '성장', tabBarIcon: ({ color, size }) => <Ionicons name="trending-up" size={size} color={color} /> }} />
+      <Tabs.Screen name="goals" options={{ title: '목표', tabBarIcon: ({ color, size }) => <Ionicons name="trophy" size={size} color={color} /> }} />
       <Tabs.Screen name="workout" options={{ href: null }} />
       <Tabs.Screen name="ai" options={{ href: null }} />
       <Tabs.Screen name="profile" options={{ href: null }} />

@@ -1,267 +1,177 @@
-import React, { useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
-import { useSQLiteContext } from 'expo-sqlite';
+import { useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
+import { colors, sportColors, sportLabels } from '../../src/utils/theme';
 import { useProfileStore } from '../../src/stores/profileStore';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { useAIStore } from '../../src/stores/aiStore';
 import { useAppStore } from '../../src/stores/appStore';
 import { WorkoutCard } from '../../src/components/workout/WorkoutCard';
-import { EmptyState } from '../../src/components/common/EmptyState';
-import { colors, sportLabels } from '../../src/utils/theme';
-import { formatDistanceKm, formatSwimDistance, formatDuration, getTodayKST } from '../../src/utils/formatters';
-import { getDailyTip } from '../../src/services/ai/dailyTip';
+import { formatDuration, formatDistanceKm, formatSwimDistance } from '../../src/utils/formatters';
 
 export default function Dashboard() {
   const router = useRouter();
   const db = useSQLiteContext();
   const { profile } = useProfileStore();
-  const { recentWorkouts, weeklyStats, isLoading, refreshAll } = useWorkoutStore();
-  const { dailyTip, dailyTipDate, setDailyTip, setError } = useAIStore();
-  const { hasApiKey, checkAndIncrementAIUsage } = useAppStore();
-  const [refreshing, setRefreshing] = React.useState(false);
-  const [tipLoading, setTipLoading] = React.useState(false);
+  const { recentWorkouts, weeklyStats, refreshAll, isLoading } = useWorkoutStore();
+  const { dailyTip, fetchDailyTip } = useAIStore();
+  const { hasApiKey } = useAppStore();
 
-  useEffect(() => {
-    refreshAll(db);
-  }, []);
-
-  useEffect(() => {
-    fetchTipIfNeeded();
-  }, [profile, hasApiKey, recentWorkouts.length]);
-
-  async function fetchTipIfNeeded() {
-    if (!profile || !hasApiKey) return;
-    const today = getTodayKST();
-    if (dailyTipDate === today) return;
-    if (!checkAndIncrementAIUsage(0.5)) return;
-
-    setTipLoading(true);
-    try {
-      const tip = await getDailyTip(profile, recentWorkouts);
-      setDailyTip(tip, today);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setTipLoading(false);
-    }
-  }
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
+  const load = useCallback(async () => {
     await refreshAll(db);
-    setRefreshing(false);
-  }, [db]);
+    if (hasApiKey && !dailyTip) {
+      fetchDailyTip(db, profile);
+    }
+  }, [db, hasApiKey, dailyTip, profile]);
 
-  const greeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return '좋은 아침이에요';
-    if (hour < 18) return '좋은 오후예요';
-    return '좋은 저녁이에요';
-  };
+  useEffect(() => { load(); }, []);
+
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return '좋은 아침';
+    if (h < 18) return '안녕하세요';
+    return '좋은 저녁';
+  })();
 
   return (
     <ScrollView
-      style={styles.flex}
+      style={styles.container}
       contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
-      }
+      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} tintColor={colors.primary} />}
     >
+      {/* 헤더 */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>{greeting()}, {profile?.name ?? ''}님 👋</Text>
-          <Text style={styles.subGreeting}>이번 주 훈련 현황</Text>
+          <Text style={styles.greeting}>{greeting}, {profile?.name ?? '트레이니'} 군!🔥</Text>
+          <Text style={styles.subGreeting}>오늘도 파이팅하게 훈련하세요</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push('/(app)/profile')} style={styles.profileBtn}>
-          <Ionicons name="person-circle-outline" size={32} color={colors.textSecondary} />
+        <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={styles.settingsBtn}>
+          <Ionicons name="settings-outline" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.weeklyCard}>
-        <View style={styles.weeklyRow}>
-          <WeeklyBubble
-            emoji="🏃"
-            label={sportLabels.running}
-            value={formatDistanceKm(weeklyStats.run_distance_m)}
-            color={colors.running}
-          />
-          <WeeklyBubble
-            emoji="🏊"
-            label={sportLabels.swimming}
-            value={formatSwimDistance(weeklyStats.swim_distance_m)}
-            color={colors.swimming}
-          />
-          <WeeklyBubble
-            emoji="🚴"
-            label={sportLabels.cycling}
-            value={formatDistanceKm(weeklyStats.bike_distance_m)}
-            color={colors.cycling}
-          />
-        </View>
-        <View style={styles.weeklyFooter}>
-          <Text style={styles.weeklyFooterText}>
-            총 운동 {weeklyStats.workout_count}회 · {formatDuration(weeklyStats.total_duration_sec)}
-          </Text>
-        </View>
-      </View>
-
-      {hasApiKey && (
-        <TouchableOpacity
-          style={styles.tipCard}
-          onPress={() => router.push('/(app)/ai/coach')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.tipHeader}>
-            <Ionicons name="sparkles" size={16} color={colors.gold} />
-            <Text style={styles.tipHeaderText}>AI 코치 오늘의 팁</Text>
-            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+      {/* 주간 요약 */}
+      {weeklyStats && (
+        <View style={styles.weeklyCard}>
+          <Text style={styles.sectionTitle}>이번 주 훈련</Text>
+          <View style={styles.weeklyGrid}>
+            <View style={styles.weeklyItem}>
+              <Text style={styles.weeklyValue}>{weeklyStats.totalWorkouts}</Text>
+              <Text style={styles.weeklyLabel}>운동 횟수</Text>
+            </View>
+            <View style={styles.weeklyDivider} />
+            <View style={styles.weeklyItem}>
+              <Text style={styles.weeklyValue}>{formatDuration(weeklyStats.totalDurationSec)}</Text>
+              <Text style={styles.weeklyLabel}>연습 시간</Text>
+            </View>
+            <View style={styles.weeklyDivider} />
+            <View style={styles.weeklyItem}>
+              <Text style={styles.weeklyValue}>{formatDistanceKm(weeklyStats.totalDistanceM)}</Text>
+              <Text style={styles.weeklyLabel}>연습 거리</Text>
+            </View>
           </View>
-          {tipLoading ? (
-            <ActivityIndicator color={colors.gold} size="small" style={styles.tipLoader} />
-          ) : (
-            <Text style={styles.tipText}>
-              {dailyTip ?? '탭하면 AI 코치와 대화할 수 있어요'}
-            </Text>
+          {weeklyStats.sportBreakdown && Object.keys(weeklyStats.sportBreakdown).length > 0 && (
+            <View style={styles.sportRow}>
+              {Object.entries(weeklyStats.sportBreakdown).map(([sport, data]: [string, any]) => (
+                <View key={sport} style={[styles.sportBadge, { borderColor: sportColors[sport as keyof typeof sportColors] }]}>
+                  <Text style={[styles.sportBadgeText, { color: sportColors[sport as keyof typeof sportColors] }]}>
+                    {sportLabels[sport as keyof typeof sportLabels]} {data.count}회
+                  </Text>
+                </View>
+              ))}
+            </View>
           )}
+        </View>
+      )}
+
+      {/* AI 팁 */}
+      {dailyTip ? (
+        <View style={styles.tipCard}>
+          <View style={styles.tipHeader}>
+            <Ionicons name="bulb-outline" size={16} color={colors.gold} />
+            <Text style={styles.tipTitle}>AI 코치의 오늘의 팁</Text>
+          </View>
+          <Text style={styles.tipText}>{dailyTip}</Text>
+        </View>
+      ) : hasApiKey ? null : (
+        <TouchableOpacity style={styles.setupCard} onPress={() => router.push('/(app)/settings')}>
+          <Ionicons name="key-outline" size={20} color={colors.primary} />
+          <Text style={styles.setupText}>API 키를 설정하면 AI 코치를 이용할 수 있어요</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </TouchableOpacity>
       )}
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>최근 운동</Text>
-          <TouchableOpacity onPress={() => router.push('/(app)/history')}>
-            <Text style={styles.sectionMore}>전체 보기</Text>
-          </TouchableOpacity>
-        </View>
+      {/* 빠른 기록 */}
+      <TouchableOpacity style={styles.logBtn} onPress={() => router.push('/(app)/log')}>
+        <Ionicons name="add-circle" size={20} color="#fff" />
+        <Text style={styles.logBtnText}>운동 기록하기</Text>
+      </TouchableOpacity>
 
-        {isLoading ? (
-          <ActivityIndicator color={colors.primary} style={styles.loader} />
-        ) : recentWorkouts.length === 0 ? (
-          <EmptyState
-            icon="barbell-outline"
-            title="아직 기록이 없어요"
-            description="첫 번째 운동을 기록해보세요!"
-            actionLabel="운동 기록하기"
-            onAction={() => router.push('/(app)/log')}
-          />
-        ) : (
-          recentWorkouts.slice(0, 3).map((w) => (
-            <WorkoutCard key={w.id} workout={w} />
-          ))
-        )}
+      {/* AI 기능 */}
+      <View style={styles.aiRow}>
+        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/(app)/ai/coach')}>
+          <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.primary} />
+          <Text style={styles.aiCardText}>AI 코치</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/(app)/ai/injury')}>
+          <Ionicons name="medkit-outline" size={24} color={colors.warning} />
+          <Text style={styles.aiCardText}>부상 위험</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/(app)/ai/plan')}>
+          <Ionicons name="calendar-outline" size={24} color={colors.success} />
+          <Text style={styles.aiCardText}>훈련 계획</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/(app)/profile')}>
+          <Ionicons name="person-outline" size={24} color={colors.textSecondary} />
+          <Text style={styles.aiCardText}>프로필</Text>
+        </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/(app)/log')}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color={colors.text} />
-      </TouchableOpacity>
+      {/* 최근 운동 */}
+      <Text style={styles.sectionTitle}>최근 운동</Text>
+      {recentWorkouts.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>아직 운동 기록이 없어요</Text>
+          <Text style={styles.emptySubText}>첫 번째 훈련을 기록해보세요! 🔥</Text>
+        </View>
+      ) : (
+        recentWorkouts.slice(0, 3).map(w => <WorkoutCard key={w.id} workout={w} />)
+      )}
     </ScrollView>
   );
 }
 
-function WeeklyBubble({
-  emoji,
-  label,
-  value,
-  color,
-}: {
-  emoji: string;
-  label: string;
-  value: string;
-  color: string;
-}) {
-  return (
-    <View style={styles.bubble}>
-      <Text style={styles.bubbleEmoji}>{emoji}</Text>
-      <Text style={[styles.bubbleValue, { color }]}>{value}</Text>
-      <Text style={styles.bubbleLabel}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: 100 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: 16, paddingTop: 56, paddingBottom: 32 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 },
   greeting: { fontSize: 22, fontWeight: '800', color: colors.text },
-  subGreeting: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
-  profileBtn: { padding: 4 },
-  weeklyCard: {
-    backgroundColor: colors.card,
-    marginHorizontal: 16,
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 14,
-  },
-  weeklyRow: { flexDirection: 'row', justifyContent: 'space-around' },
-  bubble: { alignItems: 'center' },
-  bubbleEmoji: { fontSize: 28, marginBottom: 6 },
-  bubbleValue: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
-  bubbleLabel: { color: colors.textMuted, fontSize: 11 },
-  weeklyFooter: { marginTop: 14, borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: 10 },
-  weeklyFooterText: { color: colors.textSecondary, fontSize: 12, textAlign: 'center' },
-  tipCard: {
-    backgroundColor: '#1A1500',
-    borderWidth: 1,
-    borderColor: colors.gold + '40',
-    borderRadius: 14,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 14,
-  },
-  tipHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  tipHeaderText: { flex: 1, color: colors.gold, fontSize: 12, fontWeight: '600' },
-  tipLoader: { paddingVertical: 8 },
-  tipText: { color: colors.text, fontSize: 14, lineHeight: 20 },
-  section: { paddingHorizontal: 16 },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: { color: colors.text, fontSize: 17, fontWeight: '700' },
-  sectionMore: { color: colors.primary, fontSize: 13 },
-  loader: { paddingVertical: 40 },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    backgroundColor: colors.primary,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-  },
+  subGreeting: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  settingsBtn: { padding: 4 },
+  weeklyCard: { backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.cardBorder },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 12, marginTop: 4 },
+  weeklyGrid: { flexDirection: 'row', alignItems: 'center' },
+  weeklyItem: { flex: 1, alignItems: 'center' },
+  weeklyValue: { fontSize: 20, fontWeight: '800', color: colors.text },
+  weeklyLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  weeklyDivider: { width: 1, height: 36, backgroundColor: colors.divider, marginHorizontal: 8 },
+  sportRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  sportBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
+  sportBadgeText: { fontSize: 12, fontWeight: '600' },
+  tipCard: { backgroundColor: colors.surface, borderRadius: 14, padding: 14, marginBottom: 12, borderLeftWidth: 3, borderLeftColor: colors.gold },
+  tipHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
+  tipTitle: { color: colors.gold, fontWeight: '700', fontSize: 13 },
+  tipText: { color: colors.textSecondary, fontSize: 14, lineHeight: 20 },
+  setupCard: { backgroundColor: colors.surface, borderRadius: 14, padding: 14, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: colors.cardBorder },
+  setupText: { flex: 1, color: colors.textSecondary, fontSize: 13 },
+  logBtn: { backgroundColor: colors.primary, borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 },
+  logBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  aiRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  aiCard: { flex: 1, backgroundColor: colors.card, borderRadius: 12, padding: 14, alignItems: 'center', gap: 6, borderWidth: 1, borderColor: colors.cardBorder },
+  aiCardText: { color: colors.textSecondary, fontSize: 11, fontWeight: '600' },
+  empty: { alignItems: 'center', paddingVertical: 32 },
+  emptyText: { color: colors.textSecondary, fontSize: 16 },
+  emptySubText: { color: colors.textMuted, fontSize: 13, marginTop: 6 },
 });

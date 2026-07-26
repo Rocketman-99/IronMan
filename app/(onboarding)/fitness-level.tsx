@@ -38,7 +38,7 @@ export default function FitnessLevel() {
           >
             <View style={styles.levelLeft}>
               <Text style={styles.levelName}>{fl.label}</Text>
-              <Text style={styles.levelDesc}>{fl.desc}</Text>
+              <Text style={styles.levelDesc}>{fl.description}</Text>
             </View>
             {level === fl.value && <Text style={styles.check}>✓</Text>}
           </TouchableOpacity>
