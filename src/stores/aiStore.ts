@@ -6,7 +6,7 @@ import { sendChatMessage } from '../services/ai/chat';
 import { assessInjuryRisk } from '../services/ai/injuryRisk';
 import { generateTrainingPlan } from '../services/ai/trainingPlan';
 import { analyzeWorkout } from '../services/ai/postWorkoutAnalysis';
-import { getRecentWorkouts, updateAIAnalysis, getWorkoutById } from '../db/queries/workouts';
+import { getRecentWorkouts, updateAIAnalysis, getWorkoutById, getWorkoutsBySport } from '../db/queries/workouts';
 import { getTodayKST } from '../utils/formatters';
 
 interface AIState {
@@ -133,7 +133,8 @@ export const useAIStore = create<AIState>((set, get) => ({
     try {
       const workout = await getWorkoutById(db, workoutId);
       if (!workout) return;
-      const result = await analyzeWorkout(workout, profile);
+      const recentSameSport = await getWorkoutsBySport(db, workout.sport_type, 5);
+      const result = await analyzeWorkout(workout, recentSameSport, profile);
       await updateAIAnalysis(db, workoutId, JSON.stringify(result));
     } catch (e) {
       console.log('AI analysis error:', e);
