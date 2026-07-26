@@ -1,13 +1,16 @@
+import { Link, Stack } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
-import { Link } from 'expo-router';
 import { colors } from '../src/utils/theme';
 
 export default function NotFound() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>페이지를 찾을 수 없습니다</Text>
-      <Link href="/(app)" style={styles.link}>홈으로 돌아가기</Link>
-    </View>
+    <>
+      <Stack.Screen options={{ title: '404' }} />
+      <View style={styles.container}>
+        <Text style={styles.title}>페이지를 찾을 수 없습니다</Text>
+        <Link href="/(app)" style={styles.link}>홈으로 돌아가기</Link>
+      </View>
+    </>
   );
 }
 

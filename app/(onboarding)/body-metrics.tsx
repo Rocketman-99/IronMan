@@ -1,182 +1,97 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { useState } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useProfileStore } from '../../src/stores/profileStore';
-import { Button } from '../../src/components/common/Button';
 import { colors } from '../../src/utils/theme';
-import { type Gender } from '../../src/types';
+import { useProfileStore } from '../../src/stores/profileStore';
+
+const GENDERS = [
+  { value: 'male', label: '남성' },
+  { value: 'female', label: '여성' },
+  { value: 'other', label: '기타' },
+];
 
 export default function BodyMetrics() {
   const router = useRouter();
   const db = useSQLiteContext();
   const { saveProfile } = useProfileStore();
-  const [birthYear, setBirthYear] = useState('');
-  const [birthMonth, setBirthMonth] = useState('');
-  const [birthDay, setBirthDay] = useState('');
-  const [gender, setGender] = useState<Gender | null>(null);
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [gender, setGender] = useState('male');
 
   async function handleNext() {
-    let birth_date: string | undefined;
-    if (birthYear && birthMonth && birthDay) {
-      birth_date = `${birthYear}-${String(birthMonth).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`;
-    }
-
     await saveProfile(db, {
-      birth_date,
-      gender: gender ?? undefined,
       height_cm: height ? parseFloat(height) : undefined,
       weight_kg: weight ? parseFloat(weight) : undefined,
+      birth_date: birthDate || undefined,
+      gender: gender as any,
     });
     router.push('/(onboarding)/fitness-level');
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>신체 정보 입력</Text>
-        <Text style={styles.subtitle}>정확한 훈련 코칭을 위해 필요합니다</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={styles.step}>2 / 4</Text>
+      <Text style={styles.title}>신체 정보</Text>
+      <Text style={styles.subtitle}>훈련 강도 계산에 활용됩니다</Text>
 
-        <Text style={styles.label}>생년월일</Text>
-        <View style={styles.dateRow}>
-          <TextInput
-            style={[styles.input, styles.dateInput]}
-            value={birthYear}
-            onChangeText={setBirthYear}
-            placeholder="1990"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="number-pad"
-            maxLength={4}
-          />
-          <Text style={styles.dateSep}>년</Text>
-          <TextInput
-            style={[styles.input, styles.dateInputSm]}
-            value={birthMonth}
-            onChangeText={setBirthMonth}
-            placeholder="01"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="number-pad"
-            maxLength={2}
-          />
-          <Text style={styles.dateSep}>월</Text>
-          <TextInput
-            style={[styles.input, styles.dateInputSm]}
-            value={birthDay}
-            onChangeText={setBirthDay}
-            placeholder="01"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="number-pad"
-            maxLength={2}
-          />
-          <Text style={styles.dateSep}>일</Text>
-        </View>
+      <Text style={styles.label}>성별</Text>
+      <View style={styles.chips}>
+        {GENDERS.map(g => (
+          <TouchableOpacity
+            key={g.value}
+            style={[styles.chip, gender === g.value && styles.chipActive]}
+            onPress={() => setGender(g.value)}
+          >
+            <Text style={[styles.chipText, gender === g.value && styles.chipTextActive]}>{g.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-        <Text style={styles.label}>성별</Text>
-        <View style={styles.genderRow}>
-          {(['male', 'female', 'other'] as Gender[]).map((g) => (
-            <TouchableOpacity
-              key={g}
-              style={[styles.genderBtn, gender === g && styles.genderBtnActive]}
-              onPress={() => setGender(g)}
-            >
-              <Text style={[styles.genderText, gender === g && styles.genderTextActive]}>
-                {g === 'male' ? '남성' : g === 'female' ? '여성' : '기타'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      <Text style={styles.label}>생년월일 (YYYY-MM-DD)</Text>
+      <TextInput style={styles.input} placeholder="예: 1990-01-15" placeholderTextColor={colors.textMuted}
+        value={birthDate} onChangeText={setBirthDate} keyboardType="numbers-and-punctuation" />
 
-        <View style={styles.row}>
-          <View style={styles.half}>
-            <Text style={styles.label}>키 (cm)</Text>
-            <TextInput
-              style={styles.input}
-              value={height}
-              onChangeText={setHeight}
-              placeholder="170"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-            />
-          </View>
-          <View style={styles.half}>
-            <Text style={styles.label}>몸무게 (kg)</Text>
-            <TextInput
-              style={styles.input}
-              value={weight}
-              onChangeText={setWeight}
-              placeholder="65"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-            />
-          </View>
+      <View style={styles.row}>
+        <View style={styles.half}>
+          <Text style={styles.label}>키 (cm)</Text>
+          <TextInput style={styles.input} placeholder="175" placeholderTextColor={colors.textMuted}
+            value={height} onChangeText={setHeight} keyboardType="decimal-pad" />
         </View>
+        <View style={styles.half}>
+          <Text style={styles.label}>몸무게 (kg)</Text>
+          <TextInput style={styles.input} placeholder="70" placeholderTextColor={colors.textMuted}
+            value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
+        </View>
+      </View>
 
-        <View style={styles.progress}>
-          {[0, 1, 2, 3].map((i) => (
-            <View key={i} style={[styles.dot, i === 1 && styles.dotActive]} />
-          ))}
-        </View>
-
-        <View style={styles.buttons}>
-          <Button label="이전" variant="secondary" onPress={() => router.back()} style={styles.btnHalf} />
-          <Button label="다음" onPress={handleNext} style={styles.btnHalf} />
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <TouchableOpacity style={styles.btn} onPress={handleNext}>
+        <Text style={styles.btnText}>다음 →</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={handleNext}>
+        <Text style={styles.skip}>건너뛰기</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
-  container: { flexGrow: 1, padding: 28 },
-  title: { fontSize: 26, fontWeight: '800', color: colors.text, marginTop: 40, marginBottom: 8 },
-  subtitle: { color: colors.textSecondary, fontSize: 14, marginBottom: 32 },
-  label: { color: colors.textSecondary, fontSize: 13, marginBottom: 8, marginTop: 16 },
-  input: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dateInput: { flex: 2 },
-  dateInputSm: { flex: 1 },
-  dateSep: { color: colors.textSecondary, fontSize: 14 },
-  genderRow: { flexDirection: 'row', gap: 10 },
-  genderBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  genderBtnActive: { borderColor: colors.primary },
-  genderText: { color: colors.textSecondary, fontSize: 15 },
-  genderTextActive: { color: colors.text, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: 24, paddingTop: 60 },
+  step: { color: colors.textMuted, fontSize: 13, marginBottom: 8 },
+  title: { fontSize: 28, fontWeight: '800', color: colors.text, marginBottom: 4 },
+  subtitle: { fontSize: 14, color: colors.textSecondary, marginBottom: 32 },
+  label: { fontSize: 14, fontWeight: '600', color: colors.textSecondary, marginBottom: 8, marginTop: 16 },
+  input: { backgroundColor: colors.surface, borderRadius: 10, padding: 14, fontSize: 16, color: colors.text, borderWidth: 1, borderColor: colors.cardBorder },
+  chips: { flexDirection: 'row', gap: 8 },
+  chip: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: colors.cardBorder, backgroundColor: colors.surface },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { color: colors.textSecondary, fontWeight: '600' },
+  chipTextActive: { color: '#fff' },
   row: { flexDirection: 'row', gap: 12 },
   half: { flex: 1 },
-  progress: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 40, marginBottom: 24 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.textMuted },
-  dotActive: { backgroundColor: colors.primary, width: 20 },
-  buttons: { flexDirection: 'row', gap: 12 },
-  btnHalf: { flex: 1, borderRadius: 14 },
+  btn: { backgroundColor: colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 32 },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  skip: { color: colors.textMuted, textAlign: 'center', marginTop: 16, fontSize: 14 },
 });
