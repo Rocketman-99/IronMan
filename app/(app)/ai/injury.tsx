@@ -21,9 +21,10 @@ export default function InjuryRisk() {
   }
 
   const risk = injuryAssessment;
+  const riskValue = risk?.overallRisk ?? 0;
   const riskColor = !risk ? colors.textMuted :
-    risk.overall_risk < 30 ? colors.success :
-    risk.overall_risk < 60 ? colors.warning : colors.error;
+    riskValue < 30 ? colors.success :
+    riskValue < 60 ? colors.warning : colors.error;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -33,15 +34,16 @@ export default function InjuryRisk() {
       </TouchableOpacity>
 
       <View style={styles.gaugeCard}>
-        <Text style={styles.gaugeLabel}>{위험도}</Text>
+        <Text style={styles.gaugeLabel}>위험도</Text>
         <Text style={[styles.gaugeValue, { color: riskColor }]}>
-          {risk ? `${risk.overall_risk}%` : '--'}
+          {risk ? `${riskValue}%` : '--'}
         </Text>
         <Text style={styles.gaugeSub}>
           {!risk ? '평가하려면 아래 버튼을 누르세요' :
-            risk.overall_risk < 30 ? '부상 위험이 낙습니다' :
-            risk.overall_risk < 60 ? '주의가 필요합니다' : '총도 쓸 유진하세요'}
+            riskValue < 30 ? '부상 위험이 낙습니다' :
+            riskValue < 60 ? '주의가 필요합니다' : '훈련량을 줄이세요'}
         </Text>
+        {risk?.summary ? <Text style={styles.summary}>{risk.summary}</Text> : null}
       </View>
 
       {!hasApiKey && (
@@ -61,10 +63,10 @@ export default function InjuryRisk() {
 
       {risk && (
         <>
-          {risk.risk_factors?.length > 0 && (
+          {risk.concerns?.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>위험 요인</Text>
-              {risk.risk_factors.map((f: string, i: number) => (
+              {risk.concerns.map((f, i) => (
                 <Text key={i} style={styles.item}>⚠️ {f}</Text>
               ))}
             </View>
@@ -72,7 +74,7 @@ export default function InjuryRisk() {
           {risk.recommendations?.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>권장 사항</Text>
-              {risk.recommendations.map((r: string, i: number) => (
+              {risk.recommendations.map((r, i) => (
                 <Text key={i} style={styles.item}>✅ {r}</Text>
               ))}
             </View>
@@ -95,6 +97,7 @@ const styles = StyleSheet.create({
   gaugeLabel: { color: colors.textSecondary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   gaugeValue: { fontSize: 56, fontWeight: '900', marginBottom: 4 },
   gaugeSub: { color: colors.textSecondary, fontSize: 14 },
+  summary: { color: colors.textMuted, fontSize: 13, marginTop: 8, textAlign: 'center', lineHeight: 18 },
   noKey: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 16 },
   noKeyText: { flex: 1, color: colors.textSecondary, fontSize: 13 },
   keyBtn: { backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },

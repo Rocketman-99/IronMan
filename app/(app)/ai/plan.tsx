@@ -32,7 +32,7 @@ export default function TrainingPlan() {
         <View style={styles.empty}>
           <Ionicons name="calendar-outline" size={56} color={colors.textMuted} />
           <Text style={styles.emptyTitle}>AI 맞이춤 훈련 계획</Text>
-          <Text style={styles.emptyText}>프로필과 최근 운동 데이터를 분석하여\n4주 훈련 계획을 생성합니다</Text>
+          <Text style={styles.emptyText}>프로필과 최근 운동 데이터를 분석하여{"\n"}4주 훈련 계획을 생성합니다</Text>
           {!hasApiKey ? (
             <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={styles.btn}>
               <Text style={styles.btnText}>API 키 설정하기</Text>
@@ -46,17 +46,16 @@ export default function TrainingPlan() {
       ) : (
         <>
           <Text style={styles.planTitle}>{trainingPlan.title}</Text>
-          <Text style={styles.planOverview}>{trainingPlan.overview}</Text>
-          {trainingPlan.weeks?.map((week: any, idx: number) => (
+          {trainingPlan.weeks?.map((week, idx) => (
             <TouchableOpacity key={idx} style={styles.weekCard} onPress={() => setExpanded(expanded === idx ? null : idx)}>
               <View style={styles.weekHeader}>
-                <Text style={styles.weekTitle}>{week.week_label ?? `${idx + 1}주차`}</Text>
+                <Text style={styles.weekTitle}>{week.weekNumber}주차</Text>
                 <Ionicons name={expanded === idx ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
               </View>
               <Text style={styles.weekFocus}>{week.focus}</Text>
-              {expanded === idx && week.sessions?.map((s: any, si: number) => (
+              {expanded === idx && week.sessions?.map((s, si) => (
                 <View key={si} style={styles.session}>
-                  <Text style={styles.sessionDay}>{s.day}</Text>
+                  <Text style={styles.sessionDay}>{s.day} • {s.sport} • {s.duration}</Text>
                   <Text style={styles.sessionDesc}>{s.description}</Text>
                 </View>
               ))}
@@ -81,8 +80,7 @@ const styles = StyleSheet.create({
   emptyText: { color: colors.textSecondary, fontSize: 14, textAlign: 'center', lineHeight: 20 },
   btn: { backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 14, marginTop: 8 },
   btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  planTitle: { color: colors.text, fontSize: 22, fontWeight: '800', marginBottom: 8 },
-  planOverview: { color: colors.textSecondary, fontSize: 14, lineHeight: 20, marginBottom: 20 },
+  planTitle: { color: colors.text, fontSize: 22, fontWeight: '800', marginBottom: 20 },
   weekCard: { backgroundColor: colors.card, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.cardBorder },
   weekHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   weekTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },

@@ -9,7 +9,7 @@ import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { useAIStore } from '../../src/stores/aiStore';
 import { useAppStore } from '../../src/stores/appStore';
 import { WorkoutCard } from '../../src/components/workout/WorkoutCard';
-import { formatDuration, formatDistanceKm, formatSwimDistance } from '../../src/utils/formatters';
+import { formatDuration, formatDistanceKm } from '../../src/utils/formatters';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -35,16 +35,17 @@ export default function Dashboard() {
     return '좋은 저녁';
   })();
 
+  const totalDistanceM = (weeklyStats?.run_distance_m ?? 0) + (weeklyStats?.swim_distance_m ?? 0) + (weeklyStats?.bike_distance_m ?? 0);
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} tintColor={colors.primary} />}
     >
-      {/* 헤더 */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>{greeting}, {profile?.name ?? '트레이니'} 군!🔥</Text>
+          <Text style={styles.greeting}>{greeting}, {profile?.name ?? '트레이니'} 군! 🔥</Text>
           <Text style={styles.subGreeting}>오늘도 파이팅하게 훈련하세요</Text>
         </View>
         <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={styles.settingsBtn}>
@@ -52,41 +53,28 @@ export default function Dashboard() {
         </TouchableOpacity>
       </View>
 
-      {/* 주간 요약 */}
       {weeklyStats && (
         <View style={styles.weeklyCard}>
           <Text style={styles.sectionTitle}>이번 주 훈련</Text>
           <View style={styles.weeklyGrid}>
             <View style={styles.weeklyItem}>
-              <Text style={styles.weeklyValue}>{weeklyStats.totalWorkouts}</Text>
+              <Text style={styles.weeklyValue}>{weeklyStats.workout_count}</Text>
               <Text style={styles.weeklyLabel}>운동 횟수</Text>
             </View>
             <View style={styles.weeklyDivider} />
             <View style={styles.weeklyItem}>
-              <Text style={styles.weeklyValue}>{formatDuration(weeklyStats.totalDurationSec)}</Text>
+              <Text style={styles.weeklyValue}>{formatDuration(weeklyStats.total_duration_sec)}</Text>
               <Text style={styles.weeklyLabel}>연습 시간</Text>
             </View>
             <View style={styles.weeklyDivider} />
             <View style={styles.weeklyItem}>
-              <Text style={styles.weeklyValue}>{formatDistanceKm(weeklyStats.totalDistanceM)}</Text>
+              <Text style={styles.weeklyValue}>{formatDistanceKm(totalDistanceM)}</Text>
               <Text style={styles.weeklyLabel}>연습 거리</Text>
             </View>
           </View>
-          {weeklyStats.sportBreakdown && Object.keys(weeklyStats.sportBreakdown).length > 0 && (
-            <View style={styles.sportRow}>
-              {Object.entries(weeklyStats.sportBreakdown).map(([sport, data]: [string, any]) => (
-                <View key={sport} style={[styles.sportBadge, { borderColor: sportColors[sport as keyof typeof sportColors] }]}>
-                  <Text style={[styles.sportBadgeText, { color: sportColors[sport as keyof typeof sportColors] }]}>
-                    {sportLabels[sport as keyof typeof sportLabels]} {data.count}회
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
         </View>
       )}
 
-      {/* AI 팁 */}
       {dailyTip ? (
         <View style={styles.tipCard}>
           <View style={styles.tipHeader}>
@@ -95,21 +83,19 @@ export default function Dashboard() {
           </View>
           <Text style={styles.tipText}>{dailyTip}</Text>
         </View>
-      ) : hasApiKey ? null : (
+      ) : !hasApiKey ? (
         <TouchableOpacity style={styles.setupCard} onPress={() => router.push('/(app)/settings')}>
           <Ionicons name="key-outline" size={20} color={colors.primary} />
           <Text style={styles.setupText}>API 키를 설정하면 AI 코치를 이용할 수 있어요</Text>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </TouchableOpacity>
-      )}
+      ) : null}
 
-      {/* 빠른 기록 */}
       <TouchableOpacity style={styles.logBtn} onPress={() => router.push('/(app)/log')}>
         <Ionicons name="add-circle" size={20} color="#fff" />
         <Text style={styles.logBtnText}>운동 기록하기</Text>
       </TouchableOpacity>
 
-      {/* AI 기능 */}
       <View style={styles.aiRow}>
         <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/(app)/ai/coach')}>
           <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.primary} />
@@ -129,7 +115,6 @@ export default function Dashboard() {
         </TouchableOpacity>
       </View>
 
-      {/* 최근 운동 */}
       <Text style={styles.sectionTitle}>최근 운동</Text>
       {recentWorkouts.length === 0 ? (
         <View style={styles.empty}>
@@ -157,9 +142,6 @@ const styles = StyleSheet.create({
   weeklyValue: { fontSize: 20, fontWeight: '800', color: colors.text },
   weeklyLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
   weeklyDivider: { width: 1, height: 36, backgroundColor: colors.divider, marginHorizontal: 8 },
-  sportRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  sportBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
-  sportBadgeText: { fontSize: 12, fontWeight: '600' },
   tipCard: { backgroundColor: colors.surface, borderRadius: 14, padding: 14, marginBottom: 12, borderLeftWidth: 3, borderLeftColor: colors.gold },
   tipHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   tipTitle: { color: colors.gold, fontWeight: '700', fontSize: 13 },

@@ -4,6 +4,11 @@ import { AI_LIMITS } from '../config/api';
 import { API_KEY_STORAGE_KEY, saveAPIKey } from '../services/ai/client';
 import { getTodayKST } from '../utils/formatters';
 
+const MODEL_COSTS: Record<string, number> = {
+  haiku: AI_LIMITS.haikuCost,
+  sonnet: AI_LIMITS.sonnetCost,
+};
+
 interface AppState {
   isInitialized: boolean;
   hasApiKey: boolean;
@@ -12,7 +17,7 @@ interface AppState {
   initialize: () => Promise<void>;
   setApiKey: (key: string) => Promise<void>;
   clearApiKey: () => Promise<void>;
-  checkAndIncrementAIUsage: (cost: number) => boolean;
+  checkAndIncrementAIUsage: (model: string | number) => boolean;
   refreshApiKeyStatus: () => Promise<void>;
 }
 
@@ -24,12 +29,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   initialize: async () => {
     const apiKey = await SecureStore.getItemAsync(API_KEY_STORAGE_KEY).catch(() => null);
-    set({
-      isInitialized: true,
-      hasApiKey: !!apiKey,
-      aiCallsToday: 0,
-      aiCallsDate: getTodayKST(),
-    });
+    set({ isInitialized: true, hasApiKey: !!apiKey, aiCallsToday: 0, aiCallsDate: getTodayKST() });
   },
 
   setApiKey: async (key: string) => {
@@ -42,13 +42,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ hasApiKey: false });
   },
 
-  checkAndIncrementAIUsage: (cost: number) => {
+  checkAndIncrementAIUsage: (model) => {
+    const cost = typeof model === 'number' ? model : (MODEL_COSTS[model] ?? 0.5);
     const state = get();
     const today = getTodayKST();
     const calls = state.aiCallsDate === today ? state.aiCallsToday : 0;
-
     if (calls + cost > AI_LIMITS.dailyBudget) return false;
-
     set({ aiCallsToday: calls + cost, aiCallsDate: today });
     return true;
   },
