@@ -30,12 +30,20 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0A0A0A"
+          "backgroundColor": "#0A0A0A",
+          "image": "./assets/splash.png",
+          "imageWidth": 200
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "owner": "rocketman99",
+    "extra": {
+      "eas": {
+        "projectId": "097ed9f9-1d84-4ecb-9a3f-27b980b22317"
+      }
     }
   }
 }
