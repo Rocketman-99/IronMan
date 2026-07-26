@@ -1,146 +1,168 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View, Text, ScrollView, StyleSheet, SafeAreaView,
-  TouchableOpacity, ActivityIndicator, Dimensions,
-} from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { BarChart, LineChart } from 'react-native-gifted-charts';
-import { getWorkoutsInRange } from '../../../src/db/queries/workouts';
-import { type WorkoutWithDetails } from '../../../src/types';
 import { colors, sportColors } from '../../../src/utils/theme';
-import {
-  getWeekStartKST, formatDateShort, formatPace,
-} from '../../../src/utils/formatters';
+import { useWorkoutStore } from '../../../src/stores/workoutStore';
+import { formatDistanceKm, formatDuration } from '../../../src/utils/formatters';
+import { getWorkoutsInRange } from '../../../src/db/queries/workouts';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+const SCREEN_W = Dimensions.get('window').width;
 const CHART_W = SCREEN_W - 48;
 
-type TabKey = 'volume' | 'pace' | 'hr';
+type Tab = 'volume' | 'pace' | 'hr';
 
-const TABS: Array<{ key: TabKey; label: string }> = [
-  { key: 'volume', label: '볼륨' },
-  { key: 'pace', label: '페이스' },
-  { key: 'hr', label: '심박수' },
-];
-
-export default function ProgressScreen() {
+export default function Progress() {
   const db = useSQLiteContext();
-  const [tab, setTab] = useState<TabKey>('volume');
-  const [workouts, setWorkouts] = useState<WorkoutWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { recentWorkouts, refreshAll, isLoading } = useWorkoutStore();
+  const [tab, setTab] = useState<Tab>('volume');
 
+  const load = useCallback(() => refreshAll(db), [db]);
   useEffect(() => { load(); }, []);
 
-  async function load() {
-    setLoading(true);
-    const today = getWeekStartKST();
-    const from = new Date(new Date(today + 'T00:00:00+09:00').getTime() - 55 * 24 * 60 * 60 * 1000)
-      .toISOString().slice(0, 10);
-    const data = await getWorkoutsInRange(db, from, today);
-    setWorkouts(data);
-    setLoading(false);
-  }
+  const TABS: { value: Tab; label: string }[] = [
+    { value: 'volume', label: '볼륨' },
+    { value: 'pace', label: '평균 페이스' },
+    { value: 'hr', label: '심박수' },
+  ];
+
+  const runWorkouts = recentWorkouts.filter(w => w.sport_type === 'running').slice(0, 10).reverse();
+
+  const volumeData = recentWorkouts.slice(0, 7).reverse().map(w => ({
+    value: Math.round(w.distance_m / 100) / 10,
+    frontColor: sportColors[w.sport_type as keyof typeof sportColors],
+    label: w.workout_date.slice(5, 10),
+  }));
+
+  const paceData = runWorkouts
+    .filter(w => w.running?.avg_pace_sec_km)
+    .map(w => ({ value: Number((w.running!.avg_pace_sec_km! / 60).toFixed(2)), dataPointText: '', label: w.workout_date.slice(5, 10) }));
+
+  const hrData = recentWorkouts.filter(w => w.avg_hr).slice(0, 10).reverse()
+    .map(w => ({ value: w.avg_hr!, dataPointText: '', label: w.workout_date.slice(5, 10) }));
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>성장 분석</Text>
-      </View>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} tintColor={colors.primary} />}
+    >
+      <Text style={styles.title}>성장 분석</Text>
+
       <View style={styles.tabRow}>
-        {TABS.map((t) => (
-          <TouchableOpacity key={t.key} style={[styles.tabBtn, tab === t.key && styles.tabBtnActive]} onPress={() => setTab(t.key)}>
-            <Text style={[styles.tabText, tab === t.key && styles.tabTextActive]}>{t.label}</Text>
+        {TABS.map(t => (
+          <TouchableOpacity key={t.value} style={[styles.tab, tab === t.value && styles.tabActive]} onPress={() => setTab(t.value)}>
+            <Text style={[styles.tabText, tab === t.value && styles.tabTextActive]}>{t.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
-      {loading ? (
-        <ActivityIndicator color={colors.primary} style={styles.loader} />
-      ) : (
-        <ScrollView contentContainerStyle={styles.content}>
-          {tab === 'volume' && <VolumeChart workouts={workouts} />}
-          {tab === 'pace' && <PaceChart workouts={workouts} />}
-          {tab === 'hr' && <HRChart workouts={workouts} />}
-        </ScrollView>
+
+      {tab === 'volume' && (
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>최근 7회 운동 거리 (km)</Text>
+          {volumeData.length > 0 ? (
+            <BarChart
+              data={volumeData}
+              width={CHART_W - 24}
+              height={180}
+              barWidth={32}
+              spacing={8}
+              noOfSections={4}
+              yAxisTextStyle={{ color: colors.textMuted, fontSize: 10 }}
+              xAxisLabelTextStyle={{ color: colors.textMuted, fontSize: 10 }}
+              backgroundColor={colors.card}
+              yAxisColor={colors.divider}
+              xAxisColor={colors.divider}
+              hideRules
+            />
+          ) : <Text style={styles.noData}>데이터가 없습니다</Text>}
+        </View>
       )}
-    </SafeAreaView>
+
+      {tab === 'pace' && (
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>러닝 페이스 추세 (min/km)</Text>
+          {paceData.length > 1 ? (
+            <LineChart
+              data={paceData}
+              width={CHART_W - 24}
+              height={180}
+              color={colors.running}
+              thickness={2}
+              noOfSections={4}
+              yAxisTextStyle={{ color: colors.textMuted, fontSize: 10 }}
+              xAxisLabelTextStyle={{ color: colors.textMuted, fontSize: 10 }}
+              dataPointsColor={colors.running}
+              startFillColor={colors.running + '44'}
+              endFillColor={colors.running + '00'}
+              areaChart
+              backgroundColor={colors.card}
+              yAxisColor={colors.divider}
+              xAxisColor={colors.divider}
+              hideRules
+            />
+          ) : <Text style={styles.noData}>러닝 기록이 부족합니다</Text>}
+        </View>
+      )}
+
+      {tab === 'hr' && (
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>평균 심박수 추세 (bpm)</Text>
+          {hrData.length > 1 ? (
+            <LineChart
+              data={hrData}
+              width={CHART_W - 24}
+              height={180}
+              color={colors.primary}
+              thickness={2}
+              noOfSections={4}
+              yAxisTextStyle={{ color: colors.textMuted, fontSize: 10 }}
+              xAxisLabelTextStyle={{ color: colors.textMuted, fontSize: 10 }}
+              dataPointsColor={colors.primary}
+              startFillColor={colors.primary + '44'}
+              endFillColor={colors.primary + '00'}
+              areaChart
+              backgroundColor={colors.card}
+              yAxisColor={colors.divider}
+              xAxisColor={colors.divider}
+              hideRules
+            />
+          ) : <Text style={styles.noData}>심박수 데이터가 부족합니다</Text>}
+        </View>
+      )}
+
+      {/* 종목별 요약 */}
+      <Text style={styles.sectionTitle}>종목별 운동 수</Text>
+      {(['running', 'swimming', 'cycling'] as const).map(sport => {
+        const count = recentWorkouts.filter(w => w.sport_type === sport).length;
+        if (count === 0) return null;
+        return (
+          <View key={sport} style={[styles.sportRow, { borderLeftColor: sportColors[sport] }]}>
+            <Text style={[styles.sportName, { color: sportColors[sport] }]}>
+              {sport === 'running' ? '러닝' : sport === 'swimming' ? '수영' : '사이클'}
+            </Text>
+            <Text style={styles.sportCount}>{count}회</Text>
+          </View>
+        );
+      })}
+    </ScrollView>
   );
-}
-
-function VolumeChart({ workouts }: { workouts: WorkoutWithDetails[] }) {
-  const weeklyData = buildWeeklyVolume(workouts);
-  return (
-    <View>
-      <Text style={styles.chartTitle}>주간 러닝 거리 (km)</Text>
-      {weeklyData.run.length > 0 ? (
-        <BarChart data={weeklyData.run.map(d => ({ value: d.value, label: d.label, frontColor: colors.running }))} width={CHART_W} height={180} barWidth={CHART_W / (weeklyData.run.length * 2.2)} xAxisColor={colors.divider} yAxisColor={colors.divider} yAxisTextStyle={{ color: colors.textMuted, fontSize: 10 }} xAxisLabelTextStyle={{ color: colors.textMuted, fontSize: 10 }} noOfSections={4} backgroundColor="transparent" />
-      ) : <NoDataText />}
-      <Text style={[styles.chartTitle, styles.chartTitleSpaced]}>주간 사이클 거리 (km)</Text>
-      {weeklyData.bike.length > 0 ? (
-        <BarChart data={weeklyData.bike.map(d => ({ value: d.value, label: d.label, frontColor: colors.cycling }))} width={CHART_W} height={180} barWidth={CHART_W / (weeklyData.bike.length * 2.2)} xAxisColor={colors.divider} yAxisColor={colors.divider} yAxisTextStyle={{ color: colors.textMuted, fontSize: 10 }} xAxisLabelTextStyle={{ color: colors.textMuted, fontSize: 10 }} noOfSections={4} backgroundColor="transparent" />
-      ) : <NoDataText />}
-      <Text style={[styles.chartTitle, styles.chartTitleSpaced]}>주간 수영 거리 (m)</Text>
-      {weeklyData.swim.length > 0 ? (
-        <BarChart data={weeklyData.swim.map(d => ({ value: d.value, label: d.label, frontColor: colors.swimming }))} width={CHART_W} height={180} barWidth={CHART_W / (weeklyData.swim.length * 2.2)} xAxisColor={colors.divider} yAxisColor={colors.divider} yAxisTextStyle={{ color: colors.textMuted, fontSize: 10 }} xAxisLabelTextStyle={{ color: colors.textMuted, fontSize: 10 }} noOfSections={4} backgroundColor="transparent" />
-      ) : <NoDataText />}
-    </View>
-  );
-}
-
-function PaceChart({ workouts }: { workouts: WorkoutWithDetails[] }) {
-  const runs = workouts.filter(w => w.sport_type === 'running' && w.running?.avg_pace_sec_km).sort((a, b) => a.workout_date.localeCompare(b.workout_date)).slice(-20);
-  if (runs.length === 0) return <NoDataText />;
-  const data = runs.map(w => ({ value: w.running!.avg_pace_sec_km! / 60, label: formatDateShort(w.workout_date), dataPointText: formatPace(w.running!.avg_pace_sec_km!) }));
-  return (
-    <View>
-      <Text style={styles.chartTitle}>러닝 페이스 추이 (분/km)</Text>
-      <LineChart data={data} width={CHART_W} height={200} color={colors.running} thickness={2} dataPointsColor={colors.running} xAxisColor={colors.divider} yAxisColor={colors.divider} yAxisTextStyle={{ color: colors.textMuted, fontSize: 10 }} xAxisLabelTextStyle={{ color: colors.textMuted, fontSize: 9 }} hideDataPoints={runs.length > 10} curved areaChart startFillColor={colors.running + '30'} endFillColor="transparent" />
-    </View>
-  );
-}
-
-function HRChart({ workouts }: { workouts: WorkoutWithDetails[] }) {
-  const withHR = workouts.filter(w => w.avg_hr).sort((a, b) => a.workout_date.localeCompare(b.workout_date)).slice(-20);
-  if (withHR.length === 0) return <NoDataText />;
-  const data = withHR.map(w => ({ value: w.avg_hr!, label: formatDateShort(w.workout_date), dataPointColor: sportColors[w.sport_type as keyof typeof sportColors] }));
-  return (
-    <View>
-      <Text style={styles.chartTitle}>평균 심박수 추이 (bpm)</Text>
-      <LineChart data={data} width={CHART_W} height={200} color={colors.primaryLight} thickness={2} xAxisColor={colors.divider} yAxisColor={colors.divider} yAxisTextStyle={{ color: colors.textMuted, fontSize: 10 }} xAxisLabelTextStyle={{ color: colors.textMuted, fontSize: 9 }} curved />
-    </View>
-  );
-}
-
-function NoDataText() { return <Text style={styles.noData}>데이터가 충분하지 않습니다</Text>; }
-
-function buildWeeklyVolume(workouts: WorkoutWithDetails[]) {
-  const weeks: Record<string, { run: number; swim: number; bike: number }> = {};
-  for (const w of workouts) {
-    const week = getWeekStartKST(w.workout_date);
-    if (!weeks[week]) weeks[week] = { run: 0, swim: 0, bike: 0 };
-    if (w.sport_type === 'running') weeks[week].run += w.distance_m / 1000;
-    else if (w.sport_type === 'swimming') weeks[week].swim += w.distance_m;
-    else if (w.sport_type === 'cycling') weeks[week].bike += w.distance_m / 1000;
-  }
-  const sorted = Object.entries(weeks).sort(([a], [b]) => a.localeCompare(b));
-  return {
-    run: sorted.map(([k, v]) => ({ label: formatDateShort(k), value: Math.round(v.run * 10) / 10 })),
-    swim: sorted.map(([k, v]) => ({ label: formatDateShort(k), value: Math.round(v.swim) })),
-    bike: sorted.map(([k, v]) => ({ label: formatDateShort(k), value: Math.round(v.bike * 10) / 10 })),
-  };
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
-  title: { fontSize: 26, fontWeight: '800', color: colors.text },
-  tabRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 16 },
-  tabBtn: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.cardBorder },
-  tabBtnActive: { borderColor: colors.primary, backgroundColor: '#1A0808' },
-  tabText: { color: colors.textSecondary, fontSize: 13 },
-  tabTextActive: { color: colors.primaryLight, fontWeight: '600' },
-  loader: { flex: 1 },
-  content: { padding: 16, paddingBottom: 40 },
-  chartTitle: { color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 12 },
-  chartTitleSpaced: { marginTop: 24 },
-  noData: { color: colors.textMuted, fontSize: 14, textAlign: 'center', paddingVertical: 40 },
+  content: { padding: 16, paddingTop: 56, paddingBottom: 32 },
+  title: { fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 16 },
+  tabRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: colors.cardBorder, backgroundColor: colors.surface },
+  tabActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  tabText: { color: colors.textSecondary, fontWeight: '600', fontSize: 13 },
+  tabTextActive: { color: '#fff' },
+  chartCard: { backgroundColor: colors.card, borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: colors.cardBorder },
+  chartTitle: { color: colors.textSecondary, fontSize: 13, fontWeight: '700', marginBottom: 12 },
+  noData: { color: colors.textMuted, textAlign: 'center', paddingVertical: 32, fontSize: 14 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 10 },
+  sportRow: { backgroundColor: colors.card, borderRadius: 10, padding: 12, marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderLeftWidth: 3, borderWidth: 1, borderColor: colors.cardBorder },
+  sportName: { fontWeight: '700', fontSize: 14 },
+  sportCount: { color: colors.text, fontWeight: '800', fontSize: 16 },
 });
