@@ -1,132 +1,109 @@
-import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView,
-  TouchableOpacity, ActivityIndicator, Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../../../src/utils/theme';
+import { useAIStore } from '../../../src/stores/aiStore';
 import { useProfileStore } from '../../../src/stores/profileStore';
 import { useAppStore } from '../../../src/stores/appStore';
-import { assessInjuryRisk } from '../../../src/services/ai/injuryRisk';
-import { getRecentWorkouts } from '../../../src/db/queries/workouts';
-import { type InjuryRiskAssessment } from '../../../src/types';
-import { ScreenHeader } from '../../../src/components/common/ScreenHeader';
-import { Card } from '../../../src/components/common/Card';
-import { Button } from '../../../src/components/common/Button';
-import { colors } from '../../../src/utils/theme';
 
-export default function InjuryScreen() {
+export default function InjuryRisk() {
+  const router = useRouter();
   const db = useSQLiteContext();
+  const { injuryAssessment, fetchInjuryRisk, isLoading } = useAIStore();
   const { profile } = useProfileStore();
-  const { checkAndIncrementAIUsage } = useAppStore();
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<InjuryRiskAssessment | null>(null);
+  const { hasApiKey, checkAndIncrementAIUsage } = useAppStore();
 
   async function handleAssess() {
-    if (!checkAndIncrementAIUsage(2)) { Alert.alert('한도 초과', '오늘의 AI 사용 한도에 도달했습니다.'); return; }
-    if (!profile) { Alert.alert('프로필 필요', '먼저 프로필을 설정해주세요.'); return; }
-    setLoading(true);
-    try {
-      const workouts = await getRecentWorkouts(db, 30);
-      setResult(await assessInjuryRisk(profile, workouts));
-    } catch { Alert.alert('오류', 'AI 평가 중 오류가 발생했습니다.'); }
-    finally { setLoading(false); }
+    if (!checkAndIncrementAIUsage('sonnet')) return;
+    await fetchInjuryRisk(db, profile);
   }
 
-  const riskColor = result ? result.overallRisk >= 70 ? colors.error : result.overallRisk >= 40 ? colors.warning : colors.success : colors.textMuted;
-  const riskLabel = result ? result.overallRisk >= 70 ? '위험' : result.overallRisk >= 40 ? '주의' : '안전' : '';
+  const risk = injuryAssessment;
+  const riskColor = !risk ? colors.textMuted :
+    risk.overall_risk < 30 ? colors.success :
+    risk.overall_risk < 60 ? colors.warning : colors.error;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScreenHeader title="부상 위험 평가" showBack />
-      <ScrollView contentContainerStyle={styles.content}>
-        {!result && !loading && (
-          <View style={styles.intro}>
-            <Text style={styles.introIcon}>🛡️</Text>
-            <Text style={styles.introTitle}>부상 위험 평가</Text>
-            <Text style={styles.introText}>최근 30일간의 훈련 데이터를 AI가 분석하여{'
-'}부상 위험도와 취약 부위를 평가합니다.</Text>
-            <Button label="평가 시작하기" onPress={handleAssess} style={styles.startBtn} />
-          </View>
-        )}
-        {loading && (
-          <View style={styles.loadingBox}>
-            <ActivityIndicator color={colors.primary} size="large" />
-            <Text style={styles.loadingText}>AI가 훈련 데이터를 분석 중...</Text>
-          </View>
-        )}
-        {result && (
-          <>
-            <Card style={styles.riskCard}>
-              <Text style={styles.riskTitle}>종합 위험도</Text>
-              <View style={styles.gaugeWrap}>
-                <View style={styles.gaugeBg}><View style={[styles.gaugeFill, { width: `${result.overallRisk}%`, backgroundColor: riskColor }]} /></View>
-                <View style={styles.gaugeLabels}>
-                  <Text style={styles.gaugeMin}>0</Text>
-                  <Text style={[styles.gaugeScore, { color: riskColor }]}>{result.overallRisk}<Text style={styles.gaugeUnit}>/100</Text></Text>
-                  <Text style={styles.gaugeMax}>100</Text>
-                </View>
-              </View>
-              <View style={[styles.riskBadge, { backgroundColor: riskColor + '20', borderColor: riskColor }]}>
-                <Text style={[styles.riskBadgeText, { color: riskColor }]}>{riskLabel}</Text>
-              </View>
-            </Card>
-            {result.concerns.length > 0 && (
-              <Card style={styles.card}>
-                <Text style={styles.sectionTitle}>⚠️ 우려 사항</Text>
-                {result.concerns.map((c, i) => <View key={i} style={styles.concernItem}><View style={styles.concernBullet} /><Text style={styles.concernText}>{c}</Text></View>)}
-              </Card>
-            )}
-            {result.recommendations.length > 0 && (
-              <Card style={styles.card}>
-                <Text style={styles.sectionTitle}>💡 권장 사항</Text>
-                {result.recommendations.map((r, i) => <View key={i} style={styles.recItem}><Text style={styles.recNumber}>{i + 1}</Text><Text style={styles.recText}>{r}</Text></View>)}
-              </Card>
-            )}
-            <Card style={styles.card}>
-              <View style={styles.summaryHeader}><Ionicons name="sparkles" size={16} color={colors.gold} /><Text style={styles.summaryTitle}>AI 종합 의견</Text></View>
-              <Text style={styles.summaryText}>{result.summary}</Text>
-            </Card>
-            <Button label="다시 평가하기" onPress={handleAssess} variant="secondary" style={styles.reBtn} />
-          </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <TouchableOpacity onPress={() => router.back()} style={styles.back}>
+        <Ionicons name="chevron-back" size={24} color={colors.text} />
+        <Text style={styles.backText}>부상 위험 평가</Text>
+      </TouchableOpacity>
+
+      <View style={styles.gaugeCard}>
+        <Text style={styles.gaugeLabel}>{위험도}</Text>
+        <Text style={[styles.gaugeValue, { color: riskColor }]}>
+          {risk ? `${risk.overall_risk}%` : '--'}
+        </Text>
+        <Text style={styles.gaugeSub}>
+          {!risk ? '평가하려면 아래 버튼을 누르세요' :
+            risk.overall_risk < 30 ? '부상 위험이 낙습니다' :
+            risk.overall_risk < 60 ? '주의가 필요합니다' : '총도 쓸 유진하세요'}
+        </Text>
+      </View>
+
+      {!hasApiKey && (
+        <View style={styles.noKey}>
+          <Text style={styles.noKeyText}>API 키를 설정하세요</Text>
+          <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={styles.keyBtn}>
+            <Text style={styles.keyBtnText}>설정</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {!risk && hasApiKey && (
+        <TouchableOpacity style={styles.assessBtn} onPress={handleAssess} disabled={isLoading}>
+          {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.assessBtnText}>부상 위험 평가하기</Text>}
+        </TouchableOpacity>
+      )}
+
+      {risk && (
+        <>
+          {risk.risk_factors?.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>위험 요인</Text>
+              {risk.risk_factors.map((f: string, i: number) => (
+                <Text key={i} style={styles.item}>⚠️ {f}</Text>
+              ))}
+            </View>
+          )}
+          {risk.recommendations?.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>권장 사항</Text>
+              {risk.recommendations.map((r: string, i: number) => (
+                <Text key={i} style={styles.item}>✅ {r}</Text>
+              ))}
+            </View>
+          )}
+          <TouchableOpacity style={styles.retryBtn} onPress={handleAssess} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.retryBtnText}>다시 평가</Text>}
+          </TouchableOpacity>
+        </>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 16, paddingBottom: 40 },
-  intro: { alignItems: 'center', paddingVertical: 48 },
-  introIcon: { fontSize: 56, marginBottom: 16 },
-  introTitle: { color: colors.text, fontSize: 22, fontWeight: '800', marginBottom: 12 },
-  introText: { color: colors.textSecondary, fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
-  startBtn: { width: '100%' },
-  loadingBox: { alignItems: 'center', paddingVertical: 60, gap: 16 },
-  loadingText: { color: colors.textSecondary, fontSize: 14 },
-  riskCard: { marginBottom: 12, alignItems: 'center' },
-  riskTitle: { color: colors.text, fontSize: 16, fontWeight: '700', marginBottom: 20 },
-  gaugeWrap: { width: '100%', marginBottom: 16 },
-  gaugeBg: { height: 16, backgroundColor: colors.divider, borderRadius: 8, overflow: 'hidden' },
-  gaugeFill: { height: 16, borderRadius: 8 },
-  gaugeLabels: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  gaugeMin: { color: colors.textMuted, fontSize: 11 },
-  gaugeMax: { color: colors.textMuted, fontSize: 11 },
-  gaugeScore: { fontSize: 32, fontWeight: '800' },
-  gaugeUnit: { fontSize: 14, fontWeight: '400' },
-  riskBadge: { paddingHorizontal: 20, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
-  riskBadgeText: { fontSize: 14, fontWeight: '700' },
-  card: { marginBottom: 12 },
-  sectionTitle: { color: colors.text, fontSize: 15, fontWeight: '700', marginBottom: 12 },
-  concernItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 8 },
-  concernBullet: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.warning, marginTop: 6 },
-  concernText: { flex: 1, color: colors.textSecondary, fontSize: 14, lineHeight: 20 },
-  recItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
-  recNumber: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.primary, color: colors.text, fontSize: 12, fontWeight: '700', textAlign: 'center', lineHeight: 22 },
-  recText: { flex: 1, color: colors.textSecondary, fontSize: 14, lineHeight: 20 },
-  summaryHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  summaryTitle: { color: colors.gold, fontSize: 13, fontWeight: '600' },
-  summaryText: { color: colors.textSecondary, fontSize: 14, lineHeight: 22 },
-  reBtn: { marginTop: 8 },
+  content: { padding: 20, paddingTop: 50, paddingBottom: 40 },
+  back: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, gap: 4 },
+  backText: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  gaugeCard: { backgroundColor: colors.card, borderRadius: 16, padding: 24, alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: colors.cardBorder },
+  gaugeLabel: { color: colors.textSecondary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  gaugeValue: { fontSize: 56, fontWeight: '900', marginBottom: 4 },
+  gaugeSub: { color: colors.textSecondary, fontSize: 14 },
+  noKey: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 16 },
+  noKeyText: { flex: 1, color: colors.textSecondary, fontSize: 13 },
+  keyBtn: { backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  keyBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  assessBtn: { backgroundColor: colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 16 },
+  assessBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  section: { backgroundColor: colors.card, borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: colors.cardBorder },
+  sectionTitle: { color: colors.textSecondary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 },
+  item: { color: colors.text, fontSize: 14, lineHeight: 22, marginBottom: 2 },
+  retryBtn: { borderWidth: 1, borderColor: colors.primary, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 8 },
+  retryBtnText: { color: colors.primary, fontWeight: '700' },
 });

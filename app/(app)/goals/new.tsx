@@ -1,89 +1,136 @@
-import React, { useState } from 'react';
-import {
-  View, Text, TextInput, StyleSheet, ScrollView,
-  KeyboardAvoidingView, Platform, Alert, TouchableOpacity,
-} from 'react-native';
+import { useState } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useGoalsStore } from '../../../src/stores/goalsStore';
-import { Button } from '../../../src/components/common/Button';
-import { ScreenHeader } from '../../../src/components/common/ScreenHeader';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../src/utils/theme';
-import { type SportType } from '../../../src/types';
+import { useGoalsStore } from '../../../src/stores/goalsStore';
 
+const SPORTS = [
+  { value: 'running', label: '러닝' },
+  { value: 'swimming', label: '수영' },
+  { value: 'cycling', label: '사이클' },
+];
 const GOAL_TYPES = [
-  { value: 'distance', label: '총 거리', unit: 'km' },
-  { value: 'frequency', label: '운동 횟수', unit: '회' },
-  { value: 'pace', label: '목표 페이스', unit: 'min/km' },
+  { value: 'distance', label: '거리' },
+  { value: 'time', label: '시간' },
+  { value: 'frequency', label: '횟수' },
+  { value: 'pace', label: '페이스' },
+];
+const PERIODS = [
+  { value: 'weekly', label: '주간' },
+  { value: 'monthly', label: '월간' },
+  { value: 'total', label: '연소' },
 ];
 
 export default function NewGoal() {
   const router = useRouter();
   const db = useSQLiteContext();
   const { createGoal } = useGoalsStore();
-  const [saving, setSaving] = useState(false);
-  const [title, setTitle] = useState('');
-  const [sport, setSport] = useState<SportType | 'general'>('running');
-  const [goalType, setGoalType] = useState('distance');
-  const [targetValue, setTargetValue] = useState('');
-  const [period, setPeriod] = useState('monthly');
-  const [targetDate, setTargetDate] = useState('');
 
-  const selectedType = GOAL_TYPES.find(g => g.value === goalType);
+  const [sport, setSport] = useState('running');
+  const [goalType, setGoalType] = useState('distance');
+  const [title, setTitle] = useState('');
+  const [targetValue, setTargetValue] = useState('');
+  const [unit, setUnit] = useState('km');
+  const [period, setPeriod] = useState('weekly');
+  const [targetDate, setTargetDate] = useState('');
+  const [saving, setSaving] = useState(false);
 
   async function handleSave() {
-    if (!title.trim()) return Alert.alert('목표 이름을 입력해주세요');
-    if (!targetValue) return Alert.alert('목표값을 입력해주세요');
+    if (!title || !targetValue) { Alert.alert('오류', '제목과 목표치를 입력하세요'); return; }
     setSaving(true);
     try {
-      await createGoal(db, { sport_type: sport, goal_type: goalType as any, title: title.trim(), target_value: parseFloat(targetValue), unit: selectedType?.unit ?? '', period: period as any, target_date: targetDate || undefined });
+      await createGoal(db, {
+        sport_type: sport,
+        goal_type: goalType,
+        title,
+        target_value: parseFloat(targetValue),
+        unit,
+        period,
+        target_date: targetDate || undefined,
+      });
       router.back();
-    } catch {
-      Alert.alert('오류', '저장 중 오류가 발생했습니다.');
     } finally { setSaving(false); }
   }
 
-  const sportOptions: Array<{ value: SportType | 'general'; label: string }> = [
-    { value: 'running', label: '🏃 러닝' }, { value: 'swimming', label: '🏊 수영' },
-    { value: 'cycling', label: '🚴 사이클' }, { value: 'general', label: '🏆 전체' },
-  ];
-
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScreenHeader title="목표 추가" showBack />
-      <ScrollView contentContainerStyle={styles.content}>
-        <Field label="목표 이름 *"><TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="예: 이번 달 100km 달리기" placeholderTextColor={colors.textMuted} /></Field>
-        <Field label="종목">
-          <View style={styles.chips}>{sportOptions.map(s => <TouchableOpacity key={s.value} style={[styles.chip, sport === s.value && styles.chipActive]} onPress={() => setSport(s.value)}><Text style={[styles.chipText, sport === s.value && styles.chipTextActive]}>{s.label}</Text></TouchableOpacity>)}</View>
-        </Field>
-        <Field label="목표 유형">
-          <View style={styles.chips}>{GOAL_TYPES.map(g => <TouchableOpacity key={g.value} style={[styles.chip, goalType === g.value && styles.chipActive]} onPress={() => setGoalType(g.value)}><Text style={[styles.chipText, goalType === g.value && styles.chipTextActive]}>{g.label}</Text></TouchableOpacity>)}</View>
-        </Field>
-        <Field label={`목표값 (${selectedType?.unit ?? ''}) *`}><TextInput style={styles.input} value={targetValue} onChangeText={setTargetValue} keyboardType="decimal-pad" placeholder={goalType === 'distance' ? '100' : goalType === 'frequency' ? '12' : '5:30'} placeholderTextColor={colors.textMuted} /></Field>
-        <Field label="기간">
-          <View style={styles.chips}>{[{ value: 'weekly', label: '주간' }, { value: 'monthly', label: '월간' }, { value: 'total', label: '누적' }].map(p => <TouchableOpacity key={p.value} style={[styles.chip, period === p.value && styles.chipActive]} onPress={() => setPeriod(p.value)}><Text style={[styles.chipText, period === p.value && styles.chipTextActive]}>{p.label}</Text></TouchableOpacity>)}</View>
-        </Field>
-        <Field label="목표 날짜 (선택)"><TextInput style={styles.input} value={targetDate} onChangeText={setTargetDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} /></Field>
-        <Button label="목표 저장" onPress={handleSave} loading={saving} style={styles.saveBtn} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <TouchableOpacity onPress={() => router.back()} style={styles.back}>
+        <Ionicons name="chevron-back" size={24} color={colors.text} />
+        <Text style={styles.backText}>새 목표</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.label}>종목</Text>
+      <View style={styles.chips}>
+        {SPORTS.map(s => (
+          <TouchableOpacity key={s.value} style={[styles.chip, sport === s.value && styles.chipActive]} onPress={() => setSport(s.value)}>
+            <Text style={[styles.chipText, sport === s.value && styles.chipTextActive]}>{s.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>목표 유형</Text>
+      <View style={styles.chips}>
+        {GOAL_TYPES.map(g => (
+          <TouchableOpacity key={g.value} style={[styles.chip, goalType === g.value && styles.chipActive]} onPress={() => setGoalType(g.value)}>
+            <Text style={[styles.chipText, goalType === g.value && styles.chipTextActive]}>{g.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>목표 제목</Text>
+      <TextInput style={styles.input} placeholder="예: 주간 30km 러닝" placeholderTextColor={colors.textMuted}
+        value={title} onChangeText={setTitle} />
+
+      <View style={styles.row}>
+        <View style={styles.half}>
+          <Text style={styles.label}>목표치</Text>
+          <TextInput style={styles.input} placeholder="30" placeholderTextColor={colors.textMuted}
+            value={targetValue} onChangeText={setTargetValue} keyboardType="decimal-pad" />
+        </View>
+        <View style={styles.half}>
+          <Text style={styles.label}>단위</Text>
+          <TextInput style={styles.input} placeholder="km" placeholderTextColor={colors.textMuted}
+            value={unit} onChangeText={setUnit} />
+        </View>
+      </View>
+
+      <Text style={styles.label}>기간</Text>
+      <View style={styles.chips}>
+        {PERIODS.map(p => (
+          <TouchableOpacity key={p.value} style={[styles.chip, period === p.value && styles.chipActive]} onPress={() => setPeriod(p.value)}>
+            <Text style={[styles.chipText, period === p.value && styles.chipTextActive]}>{p.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>목표 날짜 (선택)</Text>
+      <TextInput style={styles.input} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted}
+        value={targetDate} onChangeText={setTargetDate} />
+
+      <TouchableOpacity style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving}>
+        <Text style={styles.saveBtnText}>{saving ? '저장 중...' : '목표 저장'}</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <View style={styles.field}><Text style={styles.fieldLabel}>{label}</Text>{children}</View>;
-}
-
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 16, paddingBottom: 40 },
-  field: { marginBottom: 14 },
-  fieldLabel: { color: colors.textSecondary, fontSize: 13, marginBottom: 6 },
-  input: { backgroundColor: colors.card, borderRadius: 10, padding: 13, fontSize: 15, color: colors.text, borderWidth: 1, borderColor: colors.cardBorder },
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: 20, paddingTop: 50, paddingBottom: 40 },
+  back: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, gap: 4 },
+  backText: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  label: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 6, marginTop: 14 },
+  input: { backgroundColor: colors.surface, borderRadius: 10, padding: 14, fontSize: 15, color: colors.text, borderWidth: 1, borderColor: colors.cardBorder },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.cardBorder },
-  chipActive: { borderColor: colors.primary, backgroundColor: '#1A0808' },
-  chipText: { color: colors.textSecondary, fontSize: 13 },
-  chipTextActive: { color: colors.primaryLight, fontWeight: '600' },
-  saveBtn: { marginTop: 8, borderRadius: 14 },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: colors.cardBorder, backgroundColor: colors.surface },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { color: colors.textSecondary, fontWeight: '600', fontSize: 13 },
+  chipTextActive: { color: '#fff' },
+  row: { flexDirection: 'row', gap: 10 },
+  half: { flex: 1 },
+  saveBtn: { backgroundColor: colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
+  saveBtnDisabled: { opacity: 0.5 },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
