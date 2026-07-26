@@ -34,6 +34,14 @@ interface AIState {
   setError: (error: string | null) => void;
 }
 
+const FALLBACK_PROFILE: UserProfile = {
+  id: 1, name: '트레이니', birth_date: null, gender: null,
+  height_cm: null, weight_kg: null, fitness_level: 'beginner',
+  primary_goal: null, target_race_date: null, weekly_hours: 5,
+  resting_hr: null, max_hr: null, onboarding_done: 1,
+  created_at: '', updated_at: '',
+};
+
 export const useAIStore = create<AIState>((set, get) => ({
   dailyTip: null,
   dailyTipDate: null,
@@ -70,11 +78,12 @@ export const useAIStore = create<AIState>((set, get) => ({
   setError: (error) => set({ lastError: error, isStreaming: false, isLoading: false }),
 
   fetchDailyTip: async (db, profile) => {
+    if (!profile) return;
     const today = getTodayKST();
     if (get().dailyTipDate === today) return;
     try {
       const workouts = await getRecentWorkouts(db, 7);
-      const tip = await getDailyTip(profile!, workouts);
+      const tip = await getDailyTip(profile, workouts);
       set({ dailyTip: tip, dailyTipDate: today });
     } catch (e) {
       set({ lastError: String(e) });
@@ -82,24 +91,25 @@ export const useAIStore = create<AIState>((set, get) => ({
   },
 
   sendChat: async (db, text, profile) => {
-    const { addUserMessage, startStream, appendStreamChunk, finalizeStream, setError } = get();
-    addUserMessage(text);
-    startStream();
+    const safeProfile = profile ?? FALLBACK_PROFILE;
+    get().addUserMessage(text);
+    get().startStream();
     try {
       const workouts = await getRecentWorkouts(db, 14);
-      const messages = [...get().chatMessages.slice(0, -1)];
-      await sendChatMessage(messages, profile!, workouts, appendStreamChunk);
-      finalizeStream();
+      const messages = get().chatMessages.slice(0, -1);
+      await sendChatMessage(messages, safeProfile, workouts, get().appendStreamChunk);
+      get().finalizeStream();
     } catch (e) {
-      setError(String(e));
+      get().setError(String(e));
     }
   },
 
   fetchInjuryRisk: async (db, profile) => {
+    if (!profile) return;
     set({ isLoading: true });
     try {
       const workouts = await getRecentWorkouts(db, 30);
-      const assessment = await assessInjuryRisk(profile!, workouts);
+      const assessment = await assessInjuryRisk(profile, workouts);
       set({ injuryAssessment: assessment, isLoading: false });
     } catch (e) {
       set({ lastError: String(e), isLoading: false });
@@ -107,10 +117,11 @@ export const useAIStore = create<AIState>((set, get) => ({
   },
 
   generatePlan: async (db, profile) => {
+    if (!profile) return;
     set({ isLoading: true });
     try {
       const workouts = await getRecentWorkouts(db, 14);
-      const plan = await generateTrainingPlan(profile!, workouts);
+      const plan = await generateTrainingPlan(profile, workouts);
       set({ trainingPlan: plan, isLoading: false });
     } catch (e) {
       set({ lastError: String(e), isLoading: false });
@@ -118,11 +129,12 @@ export const useAIStore = create<AIState>((set, get) => ({
   },
 
   analyzeWorkoutAI: async (db, workoutId, profile) => {
+    if (!profile) return;
     try {
       const workout = await getWorkoutById(db, workoutId);
       if (!workout) return;
-      const json = await analyzeWorkout(workout, profile!);
-      await updateAIAnalysis(db, workoutId, JSON.stringify(json));
+      const result = await analyzeWorkout(workout, profile);
+      await updateAIAnalysis(db, workoutId, JSON.stringify(result));
     } catch (e) {
       console.log('AI analysis error:', e);
     }
