@@ -4,8 +4,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { BarChart, LineChart } from 'react-native-gifted-charts';
 import { colors, sportColors } from '../../../src/utils/theme';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
-import { formatDistanceKm, formatDuration } from '../../../src/utils/formatters';
-import { getWorkoutsInRange } from '../../../src/db/queries/workouts';
+import { formatDistanceKm } from '../../../src/utils/formatters';
 
 const SCREEN_W = Dimensions.get('window').width;
 const CHART_W = SCREEN_W - 48;
@@ -131,7 +130,6 @@ export default function Progress() {
         </View>
       )}
 
-      {/* 종목별 요약 */}
       <Text style={styles.sectionTitle}>종목별 운동 수</Text>
       {(['running', 'swimming', 'cycling'] as const).map(sport => {
         const count = recentWorkouts.filter(w => w.sport_type === sport).length;
