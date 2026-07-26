@@ -10,7 +10,7 @@ import { type Goal } from '../../../src/types';
 function GoalCard({ goal, progress }: { goal: Goal; progress: number }) {
   const color = sportColors[goal.sport_type as keyof typeof sportColors] ?? colors.primary;
   const pct = Math.min(progress, 100);
-  const done = goal.is_completed;
+  const done = goal.is_completed === 1;
   return (
     <View style={[styles.card, done && styles.cardDone]}>
       <View style={styles.cardTop}>

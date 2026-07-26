@@ -5,22 +5,23 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../src/utils/theme';
 import { useGoalsStore } from '../../../src/stores/goalsStore';
+import { type SportType, type GoalType, type GoalPeriod } from '../../../src/types';
 
-const SPORTS = [
+const SPORTS: { value: SportType | 'general'; label: string }[] = [
   { value: 'running', label: '러닝' },
   { value: 'swimming', label: '수영' },
   { value: 'cycling', label: '사이클' },
 ];
-const GOAL_TYPES = [
+const GOAL_TYPES: { value: GoalType; label: string }[] = [
   { value: 'distance', label: '거리' },
   { value: 'time', label: '시간' },
   { value: 'frequency', label: '횟수' },
   { value: 'pace', label: '페이스' },
 ];
-const PERIODS = [
+const PERIODS: { value: GoalPeriod; label: string }[] = [
   { value: 'weekly', label: '주간' },
   { value: 'monthly', label: '월간' },
-  { value: 'total', label: '연소' },
+  { value: 'total', label: '누적' },
 ];
 
 export default function NewGoal() {
@@ -28,12 +29,12 @@ export default function NewGoal() {
   const db = useSQLiteContext();
   const { createGoal } = useGoalsStore();
 
-  const [sport, setSport] = useState('running');
-  const [goalType, setGoalType] = useState('distance');
+  const [sport, setSport] = useState<SportType | 'general'>('running');
+  const [goalType, setGoalType] = useState<GoalType>('distance');
   const [title, setTitle] = useState('');
   const [targetValue, setTargetValue] = useState('');
   const [unit, setUnit] = useState('km');
-  const [period, setPeriod] = useState('weekly');
+  const [period, setPeriod] = useState<GoalPeriod>('weekly');
   const [targetDate, setTargetDate] = useState('');
   const [saving, setSaving] = useState(false);
 

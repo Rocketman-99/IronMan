@@ -37,7 +37,7 @@ export default function RunningLog() {
   const totalSec = (parseInt(durationMin) || 0) * 60 + (parseInt(durationSec) || 0);
   const distanceM = (parseFloat(distanceKm) || 0) * 1000;
   const pace = distanceM > 0 && totalSec > 0 ? formatPace(calcPaceSecPerKm(distanceM, totalSec)) : '--:--';
-  const estCalories = distanceM > 0 && profile?.weight_kg ? estimateCalories('running', distanceM, totalSec, profile.weight_kg) : 0;
+  const estCalories = distanceM > 0 && profile?.weight_kg ? estimateCalories('running', totalSec, profile.weight_kg) : 0;
 
   async function handleSave() {
     if (!distanceKm || !durationMin) { Alert.alert('오류', '거리와 시간을 입력하세요'); return; }

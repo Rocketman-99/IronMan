@@ -17,7 +17,7 @@ ${profileSummary(profile)}
 최근 운동 요약:
 ${recentWorkouts.slice(0, 14).map(workoutSummary).join('\n')}
 
-위 데이터를 바탁으로 4주간 트레이닝 계획을 생성하세요.
+위 데이터를 바탕으로 4주간 트레이닝 계획을 생성하세요.
 엄격하게 아래 JSON 형식만 출력하세요 (markdown 문법 없이):
 {
   "title": "계획 제목",
@@ -50,10 +50,10 @@ ${recentWorkouts.slice(0, 14).map(workoutSummary).join('\n')}
     title: '4주 기초 트레이닝 계획',
     totalWeeks: 4,
     weeks: [
-      { weekNumber: 1, focus: '기초 체력 구축', sessions: [{ day: '화요일', sport: 'running', type: 'easy', duration: '30분', description: '쉽게 러닝' }] },
-      { weekNumber: 2, focus: '거리 능력 향상', sessions: [{ day: '화요일', sport: 'cycling', type: 'base', duration: '45분', description: '저강도 사이클' }] },
-      { weekNumber: 3, focus: '인터벌 훈련', sessions: [{ day: '수요일', sport: 'swimming', type: 'drill', duration: '40분', description: '걸음 개선 드릴' }] },
-      { weekNumber: 4, focus: '회복 및 정리', sessions: [{ day: '목요일', sport: 'running', type: 'recovery', duration: '20분', description: '눈가 러닝' }] },
+      { weekNumber: 1, focus: '기초 체력 구축', sessions: [{ day: '화요일', sport: 'running', type: 'easy', duration: '30분', description: '가벼운 러닝' }] },
+      { weekNumber: 2, focus: '지구력 향상', sessions: [{ day: '화요일', sport: 'cycling', type: 'base', duration: '45분', description: '저강도 사이클' }] },
+      { weekNumber: 3, focus: '인터벌 훈련', sessions: [{ day: '수요일', sport: 'swimming', type: 'drill', duration: '40분', description: '영법 개선 드릴' }] },
+      { weekNumber: 4, focus: '회복 및 정리', sessions: [{ day: '목요일', sport: 'running', type: 'recovery', duration: '20분', description: '회복 조깅' }] },
     ],
   };
 }

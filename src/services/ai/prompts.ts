@@ -8,7 +8,7 @@ import {
 } from '../../utils/formatters';
 import { sportLabels, fitnessLevelLabels, raceTypeLabels } from '../../utils/theme';
 
-function profileSummary(profile: UserProfile): string {
+export function profileSummary(profile: UserProfile): string {
   const age = profile.birth_date ? `${calcAge(profile.birth_date)}세` : '나이 미기입';
   const gender = profile.gender === 'male' ? '남성' : profile.gender === 'female' ? '여성' : '미기입';
   const fitness = fitnessLevelLabels[profile.fitness_level] ?? profile.fitness_level;
@@ -20,7 +20,7 @@ function profileSummary(profile: UserProfile): string {
   return `이름: ${profile.name}, ${age} ${gender}, 키 ${profile.height_cm ?? '?'}cm / 몸무게 ${profile.weight_kg ?? '?'}kg${bmi}, 피트니스 레벨: ${fitness}, 목표 레이스: ${race}`;
 }
 
-function workoutSummary(w: WorkoutWithDetails): string {
+export function workoutSummary(w: WorkoutWithDetails): string {
   const date = formatWorkoutDate(w.workout_date);
   const sport = sportLabels[w.sport_type as keyof typeof sportLabels] ?? w.sport_type;
   const dist = formatDistance(w.distance_m);
