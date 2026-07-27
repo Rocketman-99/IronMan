@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, ScrollView,
-  KeyboardAvoidingView, Platform, Alert, TouchableOpacity, SafeAreaView,
+  View, Text, TextInput, StyleSheet,
+  Alert, TouchableOpacity, SafeAreaView,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useProfileStore } from '../../../src/stores/profileStore';
 import { Button } from '../../../src/components/common/Button';
@@ -96,8 +97,12 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>프로필</Text>
       </View>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        bottomOffset={24}
+      >
 
           <Field label="이름 *">
             <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="이름" placeholderTextColor={colors.textMuted} />
@@ -179,9 +184,8 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          <Button label="저장" onPress={handleSave} loading={saving} style={styles.saveBtn} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <Button label="저장" onPress={handleSave} loading={saving} style={styles.saveBtn} />
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

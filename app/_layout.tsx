@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { migrateDbIfNeeded } from '../src/db';
 
 SplashScreen.preventAutoHideAsync();
@@ -13,12 +14,14 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SQLiteProvider databaseName="ironman.db" onInit={migrateDbIfNeeded}>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(onboarding)" />
-        <Stack.Screen name="(app)" />
-      </Stack>
-    </SQLiteProvider>
+    <KeyboardProvider>
+      <SQLiteProvider databaseName="ironman.db" onInit={migrateDbIfNeeded}>
+        <StatusBar style="light" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(onboarding)" />
+          <Stack.Screen name="(app)" />
+        </Stack>
+      </SQLiteProvider>
+    </KeyboardProvider>
   );
 }

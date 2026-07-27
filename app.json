@@ -7,6 +7,12 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "ironman",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/097ed9f9-1d84-4ecb-9a3f-27b980b22317"
+    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.ironman.training"

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,7 +48,7 @@ export default function AICoach() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}><Ionicons name="chevron-back" size={24} color={colors.text} /></TouchableOpacity>
         <Text style={styles.title}>AI 코치</Text>
@@ -69,6 +70,7 @@ export default function AICoach() {
         keyExtractor={(_, i) => String(i)}
         renderItem={({ item }) => <ChatBubble msg={item} />}
         contentContainerStyle={styles.messageList}
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           <View style={styles.emptyChat}>
             <Text style={styles.emptyChatText}>AI 코치에게 무엇이든 물어보세요!</Text>
@@ -85,7 +87,7 @@ export default function AICoach() {
 
       {isStreaming && <ActivityIndicator color={colors.gold} style={styles.loading} />}
 
-      <View style={styles.inputRow}>
+      <KeyboardStickyView style={styles.inputRow}>
         <TextInput
           style={styles.input}
           placeholder="코치에게 질문하세요..."
@@ -100,8 +102,8 @@ export default function AICoach() {
         <TouchableOpacity onPress={() => handleSend()} disabled={!input.trim() || isStreaming || !hasApiKey} style={[styles.sendBtn, (!input.trim() || isStreaming) && styles.sendBtnDisabled]}>
           <Ionicons name="send" size={18} color="#fff" />
         </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardStickyView>
+    </View>
   );
 }
 

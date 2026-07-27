@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { colors } from '../../src/utils/theme';
@@ -31,7 +38,7 @@ export default function BodyMetrics() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
       <Text style={styles.step}>2 / 4</Text>
       <Text style={styles.title}>신체 정보</Text>
       <Text style={styles.subtitle}>훈련 강도 계산에 활용됩니다</Text>
@@ -72,7 +79,7 @@ export default function BodyMetrics() {
       <TouchableOpacity onPress={handleNext}>
         <Text style={styles.skip}>건너뛰기</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

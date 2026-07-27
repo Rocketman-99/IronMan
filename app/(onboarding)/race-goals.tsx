@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { colors } from '../../src/utils/theme';
@@ -29,7 +36,7 @@ export default function RaceGoals() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
       <Text style={styles.step}>4 / 4</Text>
       <Text style={styles.title}>목표 레이스</Text>
       <Text style={styles.subtitle}>어떤 레이스를 준비하고 있나요?</Text>
@@ -54,7 +61,7 @@ export default function RaceGoals() {
       <TouchableOpacity style={styles.btn} onPress={handleFinish}>
         <Text style={styles.btnText}>훈련 시작! 🔥</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

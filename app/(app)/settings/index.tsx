@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, ScrollView,
-  SafeAreaView, Alert, TouchableOpacity,
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  SafeAreaView,
+  Alert,
+  TouchableOpacity,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../../src/stores/appStore';
 import { getAPIKey } from '../../../src/services/ai/client';
@@ -70,7 +76,7 @@ export default function SettingsScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>설정</Text>
       </View>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
 
         <Text style={styles.sectionTitle}>AI 코치 설정</Text>
 
@@ -156,7 +162,7 @@ export default function SettingsScreen() {
           <InfoRow label="플랫폼" value="iOS / Android" />
         </Card>
 
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

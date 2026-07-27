@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { colors } from '../../src/utils/theme';
@@ -24,7 +31,7 @@ export default function FitnessLevel() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
       <Text style={styles.step}>3 / 4</Text>
       <Text style={styles.title}>피트니스 레벨</Text>
       <Text style={styles.subtitle}>현재 훈련 수준을 알려주세요</Text>
@@ -56,7 +63,7 @@ export default function FitnessLevel() {
       <TouchableOpacity style={styles.btn} onPress={handleNext}>
         <Text style={styles.btnText}>다음 →</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 
