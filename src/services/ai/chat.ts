@@ -15,7 +15,7 @@ export async function sendChatMessage(
   let fullText = '';
 
   const stream = await client.messages.create({
-    model: AI_MODELS.haiku,
+    model: AI_MODELS.fast,
     max_tokens: 1024,
     system: systemPrompt,
     messages: messages.map((m) => ({ role: m.role, content: m.content })),

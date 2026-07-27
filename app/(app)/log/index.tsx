@@ -1,12 +1,13 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { t } from '../../../src/i18n/ko';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, sportColors } from '../../../src/utils/theme';
 
 const SPORTS = [
-  { type: 'running', label: '러닝', icon: 'fitness-outline' as const, emoji: '🏃', desc: '로드 / 트레일 / 트레드밀' },
-  { type: 'swimming', label: '수영', icon: 'water-outline' as const, emoji: '🏊', desc: '풀 / 오픈 워터' },
-  { type: 'cycling', label: '사이클', icon: 'bicycle-outline' as const, emoji: '🚴', desc: '로드 / 실내 트레이너' },
+  { type: 'running', label: t.sport.running, icon: 'fitness-outline' as const, emoji: '🏃', desc: t.log.runningHint },
+  { type: 'swimming', label: t.sport.swimming, icon: 'water-outline' as const, emoji: '🏊', desc: t.log.swimmingHint },
+  { type: 'cycling', label: t.sport.cycling, icon: 'bicycle-outline' as const, emoji: '🚴', desc: t.log.cyclingHint },
 ];
 
 export default function LogIndex() {
@@ -14,8 +15,8 @@ export default function LogIndex() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>운동 종목 선택</Text>
-      <Text style={styles.subtitle}>오늘 어떤 훈련을 했나요?</Text>
+      <Text style={styles.title}>{t.log.selectSport}</Text>
+      <Text style={styles.subtitle}>{t.log.selectPrompt}</Text>
       <View style={styles.list}>
         {SPORTS.map(sport => (
           <TouchableOpacity

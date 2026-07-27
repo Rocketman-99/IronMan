@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../../src/i18n/ko';
 import {
   View,
   Text,
@@ -13,9 +14,9 @@ import { colors } from '../../src/utils/theme';
 import { useProfileStore } from '../../src/stores/profileStore';
 
 const GENDERS = [
-  { value: 'male', label: '남성' },
-  { value: 'female', label: '여성' },
-  { value: 'other', label: '기타' },
+  { value: 'male', label: t.gender.male },
+  { value: 'female', label: t.gender.female },
+  { value: 'other', label: t.gender.other },
 ];
 
 export default function BodyMetrics() {
@@ -40,10 +41,10 @@ export default function BodyMetrics() {
   return (
     <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
       <Text style={styles.step}>2 / 4</Text>
-      <Text style={styles.title}>신체 정보</Text>
-      <Text style={styles.subtitle}>훈련 강도 계산에 활용됩니다</Text>
+      <Text style={styles.title}>{t.onboarding.bodyTitle}</Text>
+      <Text style={styles.subtitle}>{t.onboarding.restingHrHint}</Text>
 
-      <Text style={styles.label}>성별</Text>
+      <Text style={styles.label}>{t.onboarding.gender}</Text>
       <View style={styles.chips}>
         {GENDERS.map(g => (
           <TouchableOpacity
@@ -56,28 +57,28 @@ export default function BodyMetrics() {
         ))}
       </View>
 
-      <Text style={styles.label}>생년월일 (YYYY-MM-DD)</Text>
-      <TextInput style={styles.input} placeholder="예: 1990-01-15" placeholderTextColor={colors.textMuted}
+      <Text style={styles.label}>{t.onboarding.birthDateLabel}</Text>
+      <TextInput style={styles.input} placeholder={t.onboarding.birthDateHint} placeholderTextColor={colors.textMuted}
         value={birthDate} onChangeText={setBirthDate} keyboardType="numbers-and-punctuation" />
 
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>키 (cm)</Text>
+          <Text style={styles.label}>{t.onboarding.height}</Text>
           <TextInput style={styles.input} placeholder="175" placeholderTextColor={colors.textMuted}
             value={height} onChangeText={setHeight} keyboardType="decimal-pad" />
         </View>
         <View style={styles.half}>
-          <Text style={styles.label}>몸무게 (kg)</Text>
+          <Text style={styles.label}>{t.onboarding.weight}</Text>
           <TextInput style={styles.input} placeholder="70" placeholderTextColor={colors.textMuted}
             value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
         </View>
       </View>
 
       <TouchableOpacity style={styles.btn} onPress={handleNext}>
-        <Text style={styles.btnText}>다음 →</Text>
+        <Text style={styles.btnText}>{t.common.next}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={handleNext}>
-        <Text style={styles.skip}>건너뛰기</Text>
+        <Text style={styles.skip}>{t.common.skip}</Text>
       </TouchableOpacity>
     </KeyboardAwareScrollView>
   );

@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { type WorkoutWithDetails } from '../../types';
-import { colors, sportColors, sportLabels, feelingEmojis } from '../../utils/theme';
+import { colors, sportColors, feelingEmojis } from '../../utils/theme';
+import { t, sportLabels } from '../../i18n/ko';
 import {
   formatWorkoutDate,
   formatDistanceKm,
@@ -43,7 +44,7 @@ export function WorkoutCard({ workout }: WorkoutCardProps) {
   return (
     <TouchableOpacity
       style={[styles.card, { borderLeftColor: sportColor }]}
-      onPress={() => router.push(`/(app)/workout/${workout.id}`)}
+      onPress={() => router.push(`/workout/${workout.id}`)}
       activeOpacity={0.8}
     >
       <View style={styles.top}>
@@ -79,7 +80,7 @@ export function WorkoutCard({ workout }: WorkoutCardProps) {
         <View style={styles.divider} />
         <View style={styles.metric}>
           <Text style={styles.metricValue}>{formatDuration(workout.duration_sec)}</Text>
-          <Text style={styles.metricLabel}>시간</Text>
+          <Text style={styles.metricLabel}>{t.log.duration}</Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.metric}>

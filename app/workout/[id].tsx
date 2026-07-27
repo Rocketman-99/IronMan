@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
+import { MarkdownText } from '../../src/components/common/MarkdownText';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, sportColors, sportLabels } from '../../../src/utils/theme';
-import { useWorkoutStore } from '../../../src/stores/workoutStore';
-import { formatWorkoutDate, formatDuration, formatDistanceKm, formatSwimDistance, formatPace, calcSpeedKmh } from '../../../src/utils/formatters';
-import { type WorkoutWithDetails } from '../../../src/types';
-import { getWorkoutById } from '../../../src/db/queries/workouts';
+import { colors, sportColors } from '../../src/utils/theme';
+import { t, sportLabels, feelingLabels } from '../../src/i18n/ko';
+import { useWorkoutStore } from '../../src/stores/workoutStore';
+import { formatWorkoutDate, formatDuration, formatDistanceKm, formatSwimDistance, formatPace, calcSpeedKmh } from '../../src/utils/formatters';
+import { type WorkoutWithDetails } from '../../src/types';
+import { getWorkoutById } from '../../src/db/queries/workouts';
 
 export default function WorkoutDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -23,11 +25,11 @@ export default function WorkoutDetail() {
 
   async function handleDelete() {
     Alert.alert(
-      '운동 삭제',
-      '이 운동 기록을 삭제하시가요?',
+      t.workoutDetail.deleteTitle,
+      t.workoutDetail.deleteConfirm,
       [
-        { text: '취소', style: 'cancel' },
-        { text: '삭제', style: 'destructive', onPress: async () => {
+        { text: t.common.cancel, style: 'cancel' },
+        { text: t.common.delete, style: 'destructive', onPress: async () => {
           await deleteWorkout(db, Number(id));
           router.back();
         }},
@@ -36,7 +38,7 @@ export default function WorkoutDetail() {
   }
 
   if (loading) return <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>;
-  if (!workout) return <View style={styles.center}><Text style={styles.notFound}>운동을 찾을 수 없어요</Text></View>;
+  if (!workout) return <View style={styles.center}><Text style={styles.notFound}>{t.workoutDetail.notFound}</Text></View>;
 
   const sportColor = sportColors[workout.sport_type as keyof typeof sportColors];
 
@@ -78,32 +80,32 @@ export default function WorkoutDetail() {
       <View style={styles.metricsGrid}>
         <View style={styles.metricCard}>
           <Text style={styles.metricValue}>{getPrimary()}</Text>
-          <Text style={styles.metricLabel}>거리</Text>
+          <Text style={styles.metricLabel}>{t.log.distance}</Text>
         </View>
         <View style={styles.metricCard}>
           <Text style={styles.metricValue}>{formatDuration(workout.duration_sec)}</Text>
-          <Text style={styles.metricLabel}>시간</Text>
+          <Text style={styles.metricLabel}>{t.log.duration}</Text>
         </View>
         <View style={styles.metricCard}>
           <Text style={styles.metricValue}>{getSecondary()}</Text>
           <Text style={styles.metricLabel}>
-            {workout.sport_type === 'running' ? '페이스' : workout.sport_type === 'cycling' ? '속도' : '-'}
+            {workout.sport_type === 'running' ? t.log.pace : workout.sport_type === 'cycling' ? t.log.speed : '-'}
           </Text>
         </View>
       </View>
 
       {(workout.avg_hr || workout.calories || workout.feeling) && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>추가 정보</Text>
+          <Text style={styles.sectionTitle}>{t.log.extraInfo}</Text>
           {workout.avg_hr && <Text style={styles.infoRow}>평균 심박수: {workout.avg_hr} bpm</Text>}
           {workout.calories && <Text style={styles.infoRow}>칼로리: {workout.calories} kcal</Text>}
-          {workout.feeling && <Text style={styles.infoRow}>컨디션: {['', '힌들었음', '쿈쿈함', '보통', '좋았음', '최고!'][workout.feeling]}</Text>}
+          {workout.feeling && <Text style={styles.infoRow}>{t.workoutDetail.condition}: {feelingLabels[workout.feeling]}</Text>}
         </View>
       )}
 
       {workout.sport_type === 'running' && workout.running && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>러닝 세부 정보</Text>
+          <Text style={styles.sectionTitle}>{t.workoutDetail.runningDetail}</Text>
           {workout.running.cadence_spm && <Text style={styles.infoRow}>케이던스: {workout.running.cadence_spm} spm</Text>}
           {workout.running.elevation_gain_m && <Text style={styles.infoRow}>등반 고도: {workout.running.elevation_gain_m}m</Text>}
           {workout.running.surface && <Text style={styles.infoRow}>노면: {workout.running.surface}</Text>}
@@ -112,7 +114,7 @@ export default function WorkoutDetail() {
 
       {workout.sport_type === 'swimming' && workout.swimming && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>수영 세부 정보</Text>
+          <Text style={styles.sectionTitle}>{t.workoutDetail.swimmingDetail}</Text>
           {workout.swimming.pool_length_m && <Text style={styles.infoRow}>수영장: {workout.swimming.pool_length_m}m</Text>}
           {workout.swimming.total_laps && <Text style={styles.infoRow}>랩 수: {workout.swimming.total_laps}</Text>}
           {workout.swimming.stroke_type && <Text style={styles.infoRow}>영법: {workout.swimming.stroke_type}</Text>}
@@ -121,7 +123,7 @@ export default function WorkoutDetail() {
 
       {workout.sport_type === 'cycling' && workout.cycling && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>사이클 세부 정보</Text>
+          <Text style={styles.sectionTitle}>{t.workoutDetail.cyclingDetail}</Text>
           {workout.cycling.avg_power_w && <Text style={styles.infoRow}>평균 파워: {workout.cycling.avg_power_w}W</Text>}
           {workout.cycling.avg_cadence_rpm && <Text style={styles.infoRow}>케이던스: {workout.cycling.avg_cadence_rpm} rpm</Text>}
           {workout.cycling.elevation_gain_m && <Text style={styles.infoRow}>등반 고도: {workout.cycling.elevation_gain_m}m</Text>}
@@ -130,7 +132,7 @@ export default function WorkoutDetail() {
 
       {workout.notes ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>메모</Text>
+          <Text style={styles.sectionTitle}>{t.log.notes}</Text>
           <Text style={styles.notes}>{workout.notes}</Text>
         </View>
       ) : null}
@@ -139,18 +141,18 @@ export default function WorkoutDetail() {
         <View style={[styles.section, styles.aiSection]}>
           <View style={styles.aiHeader}>
             <Ionicons name="sparkles" size={16} color={colors.gold} />
-            <Text style={styles.aiTitle}>AI 코치 분석</Text>
+            <Text style={styles.aiTitle}>{t.workoutDetail.aiTitle}</Text>
           </View>
-          {aiData.summary && <Text style={styles.aiText}>{aiData.summary}</Text>}
+          {aiData.summary && <MarkdownText style={styles.aiText}>{aiData.summary}</MarkdownText>}
           {aiData.highlights?.length > 0 && (
             <>
-              <Text style={styles.aiSubTitle}>하이라이트</Text>
+              <Text style={styles.aiSubTitle}>{t.workoutDetail.highlights}</Text>
               {aiData.highlights.map((h: string, i: number) => <Text key={i} style={styles.aiItem}>• {h}</Text>)}
             </>
           )}
           {aiData.improvements?.length > 0 && (
             <>
-              <Text style={styles.aiSubTitle}>개선 포인트</Text>
+              <Text style={styles.aiSubTitle}>{t.workoutDetail.improvements}</Text>
               {aiData.improvements.map((h: string, i: number) => <Text key={i} style={styles.aiItem}>• {h}</Text>)}
             </>
           )}

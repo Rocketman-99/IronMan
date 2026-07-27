@@ -12,7 +12,7 @@ export async function analyzeWorkout(
   const prompt = buildPostWorkoutPrompt(workout, recentSameSport, profile);
 
   const response = await client.messages.create({
-    model: AI_MODELS.haiku,
+    model: AI_MODELS.fast,
     max_tokens: 512,
     messages: [{ role: 'user', content: prompt }],
   });

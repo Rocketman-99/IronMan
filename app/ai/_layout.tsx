@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { colors } from '../../../src/utils/theme';
-export default function WorkoutLayout() {
+import { colors } from '../../src/utils/theme';
+export default function AILayout() {
   return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />;
 }

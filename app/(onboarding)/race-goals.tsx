@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../../src/i18n/ko';
 import {
   View,
   Text,
@@ -13,10 +14,10 @@ import { colors } from '../../src/utils/theme';
 import { useProfileStore } from '../../src/stores/profileStore';
 
 const RACE_TYPES = [
-  { value: 'sprint', label: '스프린트', desc: '수영 750m, 사이클 20km, 러닝 5km' },
-  { value: 'olympic', label: '올림픽', desc: '수영 1.5km, 사이클 40km, 러닝 10km' },
-  { value: 'half_ironman', label: '하프 아이언맨', desc: '수영 1.9km, 사이클 90km, 러닝 21km' },
-  { value: 'full_ironman', label: '풀 아이언맨', desc: '수영 3.8km, 사이클 180km, 러닝 42.2km' },
+  { value: 'sprint', label: t.raceTypeShort.sprint, desc: t.raceTypeDetailComma.sprint },
+  { value: 'olympic', label: t.raceTypeShort.olympic, desc: t.raceTypeDetailComma.olympic },
+  { value: 'half_ironman', label: t.raceTypeShort.half_ironman, desc: t.raceTypeDetailComma.half_ironman },
+  { value: 'full_ironman', label: t.raceTypeShort.full_ironman, desc: t.raceTypeDetailComma.full_ironman },
 ];
 
 export default function RaceGoals() {
@@ -38,8 +39,8 @@ export default function RaceGoals() {
   return (
     <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
       <Text style={styles.step}>4 / 4</Text>
-      <Text style={styles.title}>목표 레이스</Text>
-      <Text style={styles.subtitle}>어떤 레이스를 준비하고 있나요?</Text>
+      <Text style={styles.title}>{t.profile.goalRace}</Text>
+      <Text style={styles.subtitle}>{t.onboarding.raceTitle}</Text>
 
       <View style={styles.raceList}>
         {RACE_TYPES.map(rt => (
@@ -54,12 +55,12 @@ export default function RaceGoals() {
         ))}
       </View>
 
-      <Text style={styles.label}>목표 레이스 날짜 (선택)</Text>
-      <TextInput style={styles.input} placeholder="예: 2025-10-15" placeholderTextColor={colors.textMuted}
+      <Text style={styles.label}>{t.onboarding.raceDate}</Text>
+      <TextInput style={styles.input} placeholder={t.onboarding.raceDateHint} placeholderTextColor={colors.textMuted}
         value={targetDate} onChangeText={setTargetDate} keyboardType="numbers-and-punctuation" />
 
       <TouchableOpacity style={styles.btn} onPress={handleFinish}>
-        <Text style={styles.btnText}>훈련 시작! 🔥</Text>
+        <Text style={styles.btnText}>{t.onboarding.finish}</Text>
       </TouchableOpacity>
     </KeyboardAwareScrollView>
   );

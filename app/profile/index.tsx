@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet,
-  Alert, TouchableOpacity, SafeAreaView,
+  Alert, TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useProfileStore } from '../../../src/stores/profileStore';
-import { Button } from '../../../src/components/common/Button';
-import { colors, fitnessLevelLabels, raceTypeLabels } from '../../../src/utils/theme';
-import { type FitnessLevel, type Gender, type RaceType } from '../../../src/types';
+import { useProfileStore } from '../../src/stores/profileStore';
+import { Button } from '../../src/components/common/Button';
+import { colors } from '../../src/utils/theme';
+import { t, fitnessLevelLabels, raceTypeLabels } from '../../src/i18n/ko';
+import { type FitnessLevel, type Gender, type RaceType } from '../../src/types';
 
 const FITNESS_LEVELS: Array<{ value: FitnessLevel; label: string }> = [
   { value: 'beginner', label: fitnessLevelLabels.beginner },
@@ -18,9 +20,9 @@ const FITNESS_LEVELS: Array<{ value: FitnessLevel; label: string }> = [
 ];
 
 const GENDERS: Array<{ value: Gender; label: string }> = [
-  { value: 'male', label: '남성' },
-  { value: 'female', label: '여성' },
-  { value: 'other', label: '기타' },
+  { value: 'male', label: t.gender.male },
+  { value: 'female', label: t.gender.female },
+  { value: 'other', label: t.gender.other },
 ];
 
 const RACE_TYPES: Array<{ value: RaceType; label: string }> = [
@@ -68,7 +70,7 @@ export default function ProfileScreen() {
   }, [profile]);
 
   async function handleSave() {
-    if (!name.trim()) return Alert.alert('이름을 입력해주세요');
+    if (!name.trim()) return Alert.alert(t.onboarding.nameRequired);
     setSaving(true);
     try {
       await saveProfile(db, {
@@ -84,9 +86,9 @@ export default function ProfileScreen() {
         resting_hr: restingHr ? parseInt(restingHr) : undefined,
         max_hr: maxHr ? parseInt(maxHr) : undefined,
       });
-      Alert.alert('저장 완료', '프로필이 업데이트되었습니다.');
+      Alert.alert(t.common.saved, t.profile.updated);
     } catch {
-      Alert.alert('오류', '저장 중 오류가 발생했습니다.');
+      Alert.alert(t.common.error, t.common.saveError);
     } finally {
       setSaving(false);
     }
@@ -95,7 +97,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>프로필</Text>
+        <Text style={styles.title}>{t.profile.title}</Text>
       </View>
       <KeyboardAwareScrollView
         style={styles.flex}
@@ -104,15 +106,15 @@ export default function ProfileScreen() {
         bottomOffset={24}
       >
 
-          <Field label="이름 *">
-            <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="이름" placeholderTextColor={colors.textMuted} />
+          <Field label={t.profile.name}>
+            <TextInput style={styles.input} value={name} onChangeText={setName} placeholder={t.profile.namePlaceholder} placeholderTextColor={colors.textMuted} />
           </Field>
 
-          <Field label="생년월일">
-            <TextInput style={styles.input} value={birthDate} onChangeText={setBirthDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
+          <Field label={t.onboarding.birthDate}>
+            <TextInput style={styles.input} value={birthDate} onChangeText={setBirthDate} placeholder={t.profile.birthDateFormat} placeholderTextColor={colors.textMuted} />
           </Field>
 
-          <Field label="성별">
+          <Field label={t.onboarding.gender}>
             <View style={styles.chips}>
               {GENDERS.map((g) => (
                 <TouchableOpacity
@@ -128,16 +130,16 @@ export default function ProfileScreen() {
 
           <View style={styles.row}>
             <View style={styles.halfField}>
-              <Text style={styles.fieldLabel}>키 (cm)</Text>
+              <Text style={styles.fieldLabel}>{t.onboarding.height}</Text>
               <TextInput style={styles.input} value={heightCm} onChangeText={setHeightCm} keyboardType="decimal-pad" placeholder="175" placeholderTextColor={colors.textMuted} />
             </View>
             <View style={styles.halfField}>
-              <Text style={styles.fieldLabel}>몸무게 (kg)</Text>
+              <Text style={styles.fieldLabel}>{t.onboarding.weight}</Text>
               <TextInput style={styles.input} value={weightKg} onChangeText={setWeightKg} keyboardType="decimal-pad" placeholder="70" placeholderTextColor={colors.textMuted} />
             </View>
           </View>
 
-          <Field label="피트니스 레벨">
+          <Field label={t.profile.fitnessLevel}>
             <View style={styles.chips}>
               {FITNESS_LEVELS.map((f) => (
                 <TouchableOpacity
@@ -151,7 +153,7 @@ export default function ProfileScreen() {
             </View>
           </Field>
 
-          <Field label="목표 레이스">
+          <Field label={t.profile.goalRace}>
             <View style={styles.chips}>
               {RACE_TYPES.map((r) => (
                 <TouchableOpacity
@@ -165,26 +167,26 @@ export default function ProfileScreen() {
             </View>
           </Field>
 
-          <Field label="목표 레이스 날짜">
-            <TextInput style={styles.input} value={targetRaceDate} onChangeText={setTargetRaceDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
+          <Field label={t.profile.raceDate}>
+            <TextInput style={styles.input} value={targetRaceDate} onChangeText={setTargetRaceDate} placeholder={t.profile.birthDateFormat} placeholderTextColor={colors.textMuted} />
           </Field>
 
-          <Field label="주간 훈련 가능 시간">
+          <Field label={t.onboarding.weeklyHours}>
             <TextInput style={styles.input} value={weeklyHours} onChangeText={setWeeklyHours} keyboardType="decimal-pad" placeholder="5" placeholderTextColor={colors.textMuted} />
           </Field>
 
           <View style={styles.row}>
             <View style={styles.halfField}>
-              <Text style={styles.fieldLabel}>안정시 심박수</Text>
+              <Text style={styles.fieldLabel}>{t.profile.restingHr}</Text>
               <TextInput style={styles.input} value={restingHr} onChangeText={setRestingHr} keyboardType="number-pad" placeholder="60" placeholderTextColor={colors.textMuted} />
             </View>
             <View style={styles.halfField}>
-              <Text style={styles.fieldLabel}>최대 심박수</Text>
+              <Text style={styles.fieldLabel}>{t.profile.maxHr}</Text>
               <TextInput style={styles.input} value={maxHr} onChangeText={setMaxHr} keyboardType="number-pad" placeholder="190" placeholderTextColor={colors.textMuted} />
             </View>
           </View>
 
-        <Button label="저장" onPress={handleSave} loading={saving} style={styles.saveBtn} />
+        <Button label={t.common.save} onPress={handleSave} loading={saving} style={styles.saveBtn} />
       </KeyboardAwareScrollView>
     </SafeAreaView>
   );

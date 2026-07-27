@@ -1,12 +1,14 @@
 import { useState } from 'react';
+import { MarkdownText } from '../../src/components/common/MarkdownText';
+import { t } from '../../src/i18n/ko';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../../src/utils/theme';
-import { useAIStore } from '../../../src/stores/aiStore';
-import { useProfileStore } from '../../../src/stores/profileStore';
-import { useAppStore } from '../../../src/stores/appStore';
+import { colors } from '../../src/utils/theme';
+import { useAIStore } from '../../src/stores/aiStore';
+import { useProfileStore } from '../../src/stores/profileStore';
+import { useAppStore } from '../../src/stores/appStore';
 
 export default function InjuryRisk() {
   const router = useRouter();
@@ -16,7 +18,7 @@ export default function InjuryRisk() {
   const { hasApiKey, checkAndIncrementAIUsage } = useAppStore();
 
   async function handleAssess() {
-    if (!checkAndIncrementAIUsage('sonnet')) return;
+    if (!checkAndIncrementAIUsage('deep')) return;
     await fetchInjuryRisk(db, profile);
   }
 
@@ -30,34 +32,34 @@ export default function InjuryRisk() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <TouchableOpacity onPress={() => router.back()} style={styles.back}>
         <Ionicons name="chevron-back" size={24} color={colors.text} />
-        <Text style={styles.backText}>부상 위험 평가</Text>
+        <Text style={styles.backText}>{t.ai.injuryTitle}</Text>
       </TouchableOpacity>
 
       <View style={styles.gaugeCard}>
-        <Text style={styles.gaugeLabel}>위험도</Text>
+        <Text style={styles.gaugeLabel}>{t.ai.riskLevel}</Text>
         <Text style={[styles.gaugeValue, { color: riskColor }]}>
           {risk ? `${riskValue}%` : '--'}
         </Text>
         <Text style={styles.gaugeSub}>
-          {!risk ? '평가하려면 아래 버튼을 누르세요' :
-            riskValue < 30 ? '부상 위험이 낙습니다' :
-            riskValue < 60 ? '주의가 필요합니다' : '훈련량을 줄이세요'}
+          {!risk ? t.ai.injuryStart :
+            riskValue < 30 ? t.ai.riskLow :
+            riskValue < 60 ? t.ai.riskMid : t.ai.riskHigh}
         </Text>
-        {risk?.summary ? <Text style={styles.summary}>{risk.summary}</Text> : null}
+        {risk?.summary ? <MarkdownText style={styles.summary}>{risk.summary}</MarkdownText> : null}
       </View>
 
       {!hasApiKey && (
         <View style={styles.noKey}>
-          <Text style={styles.noKeyText}>API 키를 설정하세요</Text>
-          <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={styles.keyBtn}>
-            <Text style={styles.keyBtnText}>설정</Text>
+          <Text style={styles.noKeyText}>{t.ai.setApiKey}</Text>
+          <TouchableOpacity onPress={() => router.push('/settings')} style={styles.keyBtn}>
+            <Text style={styles.keyBtnText}>{t.settings.title}</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {!risk && hasApiKey && (
         <TouchableOpacity style={styles.assessBtn} onPress={handleAssess} disabled={isLoading}>
-          {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.assessBtnText}>부상 위험 평가하기</Text>}
+          {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.assessBtnText}>{t.dashboard.injuryRiskDesc}</Text>}
         </TouchableOpacity>
       )}
 
@@ -65,7 +67,7 @@ export default function InjuryRisk() {
         <>
           {risk.concerns?.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>위험 요인</Text>
+              <Text style={styles.sectionTitle}>{t.ai.concerns}</Text>
               {risk.concerns.map((f, i) => (
                 <Text key={i} style={styles.item}>⚠️ {f}</Text>
               ))}
@@ -73,14 +75,14 @@ export default function InjuryRisk() {
           )}
           {risk.recommendations?.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>권장 사항</Text>
+              <Text style={styles.sectionTitle}>{t.ai.recommendations}</Text>
               {risk.recommendations.map((r, i) => (
                 <Text key={i} style={styles.item}>✅ {r}</Text>
               ))}
             </View>
           )}
           <TouchableOpacity style={styles.retryBtn} onPress={handleAssess} disabled={isLoading}>
-            {isLoading ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.retryBtnText}>다시 평가</Text>}
+            {isLoading ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.retryBtnText}>{t.ai.injuryRetry}</Text>}
           </TouchableOpacity>
         </>
       )}

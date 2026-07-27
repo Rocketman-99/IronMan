@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } fr
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, sportColors, sportLabels } from '../../../src/utils/theme';
+import { colors, sportColors } from '../../../src/utils/theme';
+import { t, sportLabels } from '../../../src/i18n/ko';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { WorkoutCard } from '../../../src/components/workout/WorkoutCard';
 import { type WorkoutWithDetails } from '../../../src/types';
@@ -22,16 +23,16 @@ export default function History() {
   const filtered = filter === 'all' ? recentWorkouts : recentWorkouts.filter(w => w.sport_type === filter);
 
   const filters: { value: SportFilter; label: string }[] = [
-    { value: 'all', label: '전체' },
-    { value: 'running', label: '러닝' },
-    { value: 'swimming', label: '수영' },
-    { value: 'cycling', label: '사이클' },
+    { value: 'all', label: t.common.all },
+    { value: 'running', label: t.sport.running },
+    { value: 'swimming', label: t.sport.swimming },
+    { value: 'cycling', label: t.sport.cycling },
   ];
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>운동 기록</Text>
+        <Text style={styles.title}>{t.history.title}</Text>
         <TouchableOpacity onPress={() => router.push('/(app)/log')} style={styles.addBtn}>
           <Ionicons name="add" size={24} color={colors.primary} />
         </TouchableOpacity>
@@ -57,8 +58,8 @@ export default function History() {
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} tintColor={colors.primary} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>운동 기록이 없어요</Text>
-            <Text style={styles.emptySubText}>첫 번째 훈련을 기록해보세요!</Text>
+            <Text style={styles.emptyText}>{t.history.empty}</Text>
+            <Text style={styles.emptySubText}>{t.history.emptyHint}</Text>
           </View>
         }
       />

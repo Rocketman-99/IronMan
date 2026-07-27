@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors, feelingEmojis, feelingLabels } from '../../utils/theme';
+import { colors, feelingEmojis } from '../../utils/theme';
+import { t, feelingLabels } from '../../i18n/ko';
 
 interface FeelingSelectorProps {
   value: number | null;
@@ -10,7 +11,7 @@ interface FeelingSelectorProps {
 export function FeelingSelector({ value, onChange }: FeelingSelectorProps) {
   return (
     <View>
-      <Text style={styles.title}>오늘 훈련 느낌</Text>
+      <Text style={styles.title}>{t.log.feelingPrompt}</Text>
       <View style={styles.row}>
         {([1, 2, 3, 4, 5] as const).map((n) => (
           <TouchableOpacity

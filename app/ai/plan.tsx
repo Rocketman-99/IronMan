@@ -1,12 +1,13 @@
 import { useState } from 'react';
+import { t } from '../../src/i18n/ko';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../../src/utils/theme';
-import { useAIStore } from '../../../src/stores/aiStore';
-import { useProfileStore } from '../../../src/stores/profileStore';
-import { useAppStore } from '../../../src/stores/appStore';
+import { colors } from '../../src/utils/theme';
+import { useAIStore } from '../../src/stores/aiStore';
+import { useProfileStore } from '../../src/stores/profileStore';
+import { useAppStore } from '../../src/stores/appStore';
 
 export default function TrainingPlan() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function TrainingPlan() {
   const [expanded, setExpanded] = useState<number | null>(null);
 
   async function handleGenerate() {
-    if (!checkAndIncrementAIUsage('sonnet')) return;
+    if (!checkAndIncrementAIUsage('deep')) return;
     await generatePlan(db, profile);
   }
 
@@ -25,21 +26,21 @@ export default function TrainingPlan() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <TouchableOpacity onPress={() => router.back()} style={styles.back}>
         <Ionicons name="chevron-back" size={24} color={colors.text} />
-        <Text style={styles.backText}>훈련 계획</Text>
+        <Text style={styles.backText}>{t.ai.planTitle}</Text>
       </TouchableOpacity>
 
       {!trainingPlan ? (
         <View style={styles.empty}>
           <Ionicons name="calendar-outline" size={56} color={colors.textMuted} />
-          <Text style={styles.emptyTitle}>AI 맞이춤 훈련 계획</Text>
+          <Text style={styles.emptyTitle}>{t.ai.planEmpty}</Text>
           <Text style={styles.emptyText}>프로필과 최근 운동 데이터를 분석하여{"\n"}4주 훈련 계획을 생성합니다</Text>
           {!hasApiKey ? (
-            <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={styles.btn}>
-              <Text style={styles.btnText}>API 키 설정하기</Text>
+            <TouchableOpacity onPress={() => router.push('/settings')} style={styles.btn}>
+              <Text style={styles.btnText}>{t.dashboard.setupApiKeyBtn}</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.btn} onPress={handleGenerate} disabled={isLoading}>
-              {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>계획 생성하기</Text>}
+              {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>{t.ai.planGenerate}</Text>}
             </TouchableOpacity>
           )}
         </View>
@@ -62,7 +63,7 @@ export default function TrainingPlan() {
             </TouchableOpacity>
           ))}
           <TouchableOpacity style={styles.retryBtn} onPress={handleGenerate} disabled={isLoading}>
-            {isLoading ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.retryBtnText}>다시 생성</Text>}
+            {isLoading ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.retryBtnText}>{t.ai.planRegenerate}</Text>}
           </TouchableOpacity>
         </>
       )}

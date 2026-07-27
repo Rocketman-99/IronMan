@@ -11,7 +11,7 @@ export async function getDailyTip(
   const prompt = buildDailyTipPrompt(profile, recentWorkouts);
 
   const response = await client.messages.create({
-    model: AI_MODELS.haiku,
+    model: AI_MODELS.fast,
     max_tokens: 200,
     messages: [{ role: 'user', content: prompt }],
   });

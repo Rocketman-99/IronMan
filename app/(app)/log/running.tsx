@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { t } from '../../../src/i18n/ko';
 import {
   View,
   Text,
@@ -48,7 +49,7 @@ export default function RunningLog() {
   const estCalories = distanceM > 0 && profile?.weight_kg ? estimateCalories('running', totalSec, profile.weight_kg) : 0;
 
   async function handleSave() {
-    if (!distanceKm || !durationMin) { Alert.alert('오류', '거리와 시간을 입력하세요'); return; }
+    if (!distanceKm || !durationMin) { Alert.alert(t.common.error, t.log.needDistanceDuration); return; }
     setSaving(true);
     try {
       const workoutId = await saveWorkout(db, {
@@ -68,12 +69,12 @@ export default function RunningLog() {
           surface,
         },
       });
-      if (hasApiKey && workoutId && checkAndIncrementAIUsage('haiku')) {
+      if (hasApiKey && workoutId && checkAndIncrementAIUsage('fast')) {
         analyzeWorkoutAI(db, workoutId, profile);
       }
       router.back();
     } catch (e) {
-      Alert.alert('오류', '저장에 실패했습니다');
+      Alert.alert(t.common.error, t.common.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -83,44 +84,44 @@ export default function RunningLog() {
     <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
       <TouchableOpacity onPress={() => router.back()} style={styles.back}>
         <Ionicons name="chevron-back" size={24} color={colors.text} />
-        <Text style={styles.backText}>러닝 기록</Text>
+        <Text style={styles.backText}>{t.log.runningTitle}</Text>
       </TouchableOpacity>
 
       {pace !== '--:--' && (
         <View style={styles.pacePreview}>
           <Text style={styles.paceValue}>{pace}</Text>
-          <Text style={styles.paceLabel}>/km 평균 페이스</Text>
+          <Text style={styles.paceLabel}>{t.log.avgPace}</Text>
         </View>
       )}
 
-      <Text style={styles.label}>날짜</Text>
+      <Text style={styles.label}>{t.log.date}</Text>
       <TextInput style={styles.input} value={date} onChangeText={setDate} placeholderTextColor={colors.textMuted} />
 
-      <Text style={styles.label}>거리 (km)</Text>
+      <Text style={styles.label}>{t.log.distanceKm}</Text>
       <TextInput style={styles.input} placeholder="10.5" placeholderTextColor={colors.textMuted}
         value={distanceKm} onChangeText={setDistanceKm} keyboardType="decimal-pad" />
 
-      <Text style={styles.label}>시간</Text>
+      <Text style={styles.label}>{t.log.duration}</Text>
       <View style={styles.row}>
         <View style={styles.half}>
-          <TextInput style={styles.input} placeholder="분" placeholderTextColor={colors.textMuted}
+          <TextInput style={styles.input} placeholder={t.common.minute} placeholderTextColor={colors.textMuted}
             value={durationMin} onChangeText={setDurationMin} keyboardType="number-pad" />
         </View>
         <Text style={styles.timeSep}>:</Text>
         <View style={styles.half}>
-          <TextInput style={styles.input} placeholder="초" placeholderTextColor={colors.textMuted}
+          <TextInput style={styles.input} placeholder={t.common.second} placeholderTextColor={colors.textMuted}
             value={durationSec} onChangeText={setDurationSec} keyboardType="number-pad" />
         </View>
       </View>
 
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>평균 심박수</Text>
+          <Text style={styles.label}>{t.log.avgHr}</Text>
           <TextInput style={styles.input} placeholder="150" placeholderTextColor={colors.textMuted}
             value={avgHr} onChangeText={setAvgHr} keyboardType="number-pad" />
         </View>
         <View style={styles.half}>
-          <Text style={styles.label}>추정 칼로리</Text>
+          <Text style={styles.label}>{t.log.estCalories}</Text>
           <TextInput style={styles.input} placeholder={estCalories ? String(estCalories) : '0'}
             placeholderTextColor={colors.textMuted} value={calories} onChangeText={setCalories} keyboardType="number-pad" />
         </View>
@@ -128,18 +129,18 @@ export default function RunningLog() {
 
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>케이던스 (spm)</Text>
+          <Text style={styles.label}>{t.log.cadenceSpm}</Text>
           <TextInput style={styles.input} placeholder="180" placeholderTextColor={colors.textMuted}
             value={cadence} onChangeText={setCadence} keyboardType="number-pad" />
         </View>
         <View style={styles.half}>
-          <Text style={styles.label}>등반 고도 (m)</Text>
+          <Text style={styles.label}>{t.log.elevation}</Text>
           <TextInput style={styles.input} placeholder="0" placeholderTextColor={colors.textMuted}
             value={elevation} onChangeText={setElevation} keyboardType="decimal-pad" />
         </View>
       </View>
 
-      <Text style={styles.label}>노면</Text>
+      <Text style={styles.label}>{t.log.surface}</Text>
       <View style={styles.chips}>
         {SURFACES.map(s => (
           <TouchableOpacity key={s.value} style={[styles.chip, surface === s.value && styles.chipActive]} onPress={() => setSurface(s.value)}>
@@ -148,15 +149,15 @@ export default function RunningLog() {
         ))}
       </View>
 
-      <Text style={styles.label}>오늘 컨디션</Text>
+      <Text style={styles.label}>{t.log.conditionToday}</Text>
       <FeelingSelector value={feeling} onChange={setFeeling} />
 
-      <Text style={styles.label}>메모 (선택)</Text>
-      <TextInput style={[styles.input, styles.textArea]} placeholder="훈련 내용, 느낌은 점..."
+      <Text style={styles.label}>{t.log.notesOptional}</Text>
+      <TextInput style={[styles.input, styles.textArea]} placeholder={t.log.notesPlaceholder}
         placeholderTextColor={colors.textMuted} value={notes} onChangeText={setNotes} multiline numberOfLines={3} />
 
       <TouchableOpacity style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving}>
-        <Text style={styles.saveBtnText}>{saving ? '저장 중...' : '훈련 저장'}</Text>
+        <Text style={styles.saveBtnText}>{saving ? t.common.saving : t.log.submit}</Text>
       </TouchableOpacity>
     </KeyboardAwareScrollView>
   );

@@ -34,8 +34,12 @@ ${recentWorkouts.slice(0, 14).map(workoutSummary).join('\n')}
 }`;
 
   const response = await client.messages.create({
-    model: AI_MODELS.sonnet,
-    max_tokens: 2048,
+    model: AI_MODELS.deep,
+    // 4주 × 주별 세션까지 담으려면 2048로는 중간에 잘린다.
+    max_tokens: 8000,
+    // 계획을 세우기 전에 실제로 생각하게 한다 — 이게 얕은 계획의 주된 원인이었다.
+    thinking: { type: 'adaptive' },
+    output_config: { effort: 'high' },
     messages: [{ role: 'user', content: prompt }],
   });
 

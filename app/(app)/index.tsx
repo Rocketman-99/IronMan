@@ -1,9 +1,11 @@
 import { useEffect, useCallback } from 'react';
+import { MarkdownText } from '../../src/components/common/MarkdownText';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, sportColors, sportLabels } from '../../src/utils/theme';
+import { colors, sportColors } from '../../src/utils/theme';
+import { t, sportLabels } from '../../src/i18n/ko';
 import { useProfileStore } from '../../src/stores/profileStore';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { useAIStore } from '../../src/stores/aiStore';
@@ -30,9 +32,9 @@ export default function Dashboard() {
 
   const greeting = (() => {
     const h = new Date().getHours();
-    if (h < 12) return '좋은 아침';
-    if (h < 18) return '안녕하세요';
-    return '좋은 저녁';
+    if (h < 12) return t.dashboard.greetingMorning;
+    if (h < 18) return t.dashboard.greetingDay;
+    return t.dashboard.greetingEvening;
   })();
 
   const totalDistanceM = (weeklyStats?.run_distance_m ?? 0) + (weeklyStats?.swim_distance_m ?? 0) + (weeklyStats?.bike_distance_m ?? 0);
@@ -45,31 +47,31 @@ export default function Dashboard() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>{greeting}, {profile?.name ?? '트레이니'} 군! 🔥</Text>
-          <Text style={styles.subGreeting}>오늘도 파이팅하게 훈련하세요</Text>
+          <Text style={styles.greeting}>{greeting}, {profile?.name ?? t.aiPrompt.fallbackName}님! 🔥</Text>
+          <Text style={styles.subGreeting}>{t.dashboard.subGreeting}</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={styles.settingsBtn}>
+        <TouchableOpacity onPress={() => router.push('/settings')} style={styles.settingsBtn}>
           <Ionicons name="settings-outline" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
       {weeklyStats && (
         <View style={styles.weeklyCard}>
-          <Text style={styles.sectionTitle}>이번 주 훈련</Text>
+          <Text style={styles.sectionTitle}>{t.dashboard.weeklySummary}</Text>
           <View style={styles.weeklyGrid}>
             <View style={styles.weeklyItem}>
               <Text style={styles.weeklyValue}>{weeklyStats.workout_count}</Text>
-              <Text style={styles.weeklyLabel}>운동 횟수</Text>
+              <Text style={styles.weeklyLabel}>{t.dashboard.workoutCount}</Text>
             </View>
             <View style={styles.weeklyDivider} />
             <View style={styles.weeklyItem}>
               <Text style={styles.weeklyValue}>{formatDuration(weeklyStats.total_duration_sec)}</Text>
-              <Text style={styles.weeklyLabel}>연습 시간</Text>
+              <Text style={styles.weeklyLabel}>{t.dashboard.totalTime}</Text>
             </View>
             <View style={styles.weeklyDivider} />
             <View style={styles.weeklyItem}>
               <Text style={styles.weeklyValue}>{formatDistanceKm(totalDistanceM)}</Text>
-              <Text style={styles.weeklyLabel}>연습 거리</Text>
+              <Text style={styles.weeklyLabel}>{t.dashboard.totalDistance}</Text>
             </View>
           </View>
         </View>
@@ -79,47 +81,47 @@ export default function Dashboard() {
         <View style={styles.tipCard}>
           <View style={styles.tipHeader}>
             <Ionicons name="bulb-outline" size={16} color={colors.gold} />
-            <Text style={styles.tipTitle}>AI 코치의 오늘의 팁</Text>
+            <Text style={styles.tipTitle}>{t.dashboard.dailyTipTitle}</Text>
           </View>
-          <Text style={styles.tipText}>{dailyTip}</Text>
+          <MarkdownText style={styles.tipText}>{dailyTip}</MarkdownText>
         </View>
       ) : !hasApiKey ? (
-        <TouchableOpacity style={styles.setupCard} onPress={() => router.push('/(app)/settings')}>
+        <TouchableOpacity style={styles.setupCard} onPress={() => router.push('/settings')}>
           <Ionicons name="key-outline" size={20} color={colors.primary} />
-          <Text style={styles.setupText}>API 키를 설정하면 AI 코치를 이용할 수 있어요</Text>
+          <Text style={styles.setupText}>{t.dashboard.setupApiKey}</Text>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </TouchableOpacity>
       ) : null}
 
       <TouchableOpacity style={styles.logBtn} onPress={() => router.push('/(app)/log')}>
         <Ionicons name="add-circle" size={20} color="#fff" />
-        <Text style={styles.logBtnText}>운동 기록하기</Text>
+        <Text style={styles.logBtnText}>{t.dashboard.logWorkout}</Text>
       </TouchableOpacity>
 
       <View style={styles.aiRow}>
-        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/(app)/ai/coach')}>
+        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/ai/coach')}>
           <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.primary} />
-          <Text style={styles.aiCardText}>AI 코치</Text>
+          <Text style={styles.aiCardText}>{t.dashboard.aiCoach}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/(app)/ai/injury')}>
+        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/ai/injury')}>
           <Ionicons name="medkit-outline" size={24} color={colors.warning} />
-          <Text style={styles.aiCardText}>부상 위험</Text>
+          <Text style={styles.aiCardText}>{t.dashboard.injuryRisk}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/(app)/ai/plan')}>
+        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/ai/plan')}>
           <Ionicons name="calendar-outline" size={24} color={colors.success} />
-          <Text style={styles.aiCardText}>훈련 계획</Text>
+          <Text style={styles.aiCardText}>{t.ai.planTitle}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/(app)/profile')}>
+        <TouchableOpacity style={styles.aiCard} onPress={() => router.push('/profile')}>
           <Ionicons name="person-outline" size={24} color={colors.textSecondary} />
-          <Text style={styles.aiCardText}>프로필</Text>
+          <Text style={styles.aiCardText}>{t.profile.title}</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>최근 운동</Text>
+      <Text style={styles.sectionTitle}>{t.dashboard.recentWorkouts}</Text>
       {recentWorkouts.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>아직 운동 기록이 없어요</Text>
-          <Text style={styles.emptySubText}>첫 번째 훈련을 기록해보세요! 🔥</Text>
+          <Text style={styles.emptyText}>{t.dashboard.emptyWorkouts}</Text>
+          <Text style={styles.emptySubText}>{t.dashboard.emptyWorkoutsHint}</Text>
         </View>
       ) : (
         recentWorkouts.slice(0, 3).map(w => <WorkoutCard key={w.id} workout={w} />)

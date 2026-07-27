@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../../src/i18n/ko';
 import {
   View,
   Text,
@@ -33,8 +34,8 @@ export default function FitnessLevel() {
   return (
     <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
       <Text style={styles.step}>3 / 4</Text>
-      <Text style={styles.title}>피트니스 레벨</Text>
-      <Text style={styles.subtitle}>현재 훈련 수준을 알려주세요</Text>
+      <Text style={styles.title}>{t.profile.fitnessLevel}</Text>
+      <Text style={styles.subtitle}>{t.onboarding.fitnessTitle}</Text>
 
       <View style={styles.levelList}>
         {FITNESS_LEVELS.map(fl => (
@@ -52,16 +53,16 @@ export default function FitnessLevel() {
         ))}
       </View>
 
-      <Text style={styles.label}>주간 목표 훈련 시간 (시간)</Text>
+      <Text style={styles.label}>{t.onboarding.weeklyHoursLabel}</Text>
       <TextInput style={styles.input} value={weeklyHours} onChangeText={setWeeklyHours}
         keyboardType="decimal-pad" placeholderTextColor={colors.textMuted} />
 
-      <Text style={styles.label}>안정시 심박수 (선택)</Text>
-      <TextInput style={styles.input} placeholder="예: 55" placeholderTextColor={colors.textMuted}
+      <Text style={styles.label}>{t.onboarding.restingHr}</Text>
+      <TextInput style={styles.input} placeholder={t.onboarding.restingHrPlaceholder} placeholderTextColor={colors.textMuted}
         value={restingHr} onChangeText={setRestingHr} keyboardType="number-pad" />
 
       <TouchableOpacity style={styles.btn} onPress={handleNext}>
-        <Text style={styles.btnText}>다음 →</Text>
+        <Text style={styles.btnText}>{t.common.next}</Text>
       </TouchableOpacity>
     </KeyboardAwareScrollView>
   );

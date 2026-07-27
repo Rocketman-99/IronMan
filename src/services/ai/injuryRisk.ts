@@ -11,8 +11,11 @@ export async function assessInjuryRisk(
   const prompt = buildInjuryRiskPrompt(profile, last30DaysWorkouts);
 
   const response = await client.messages.create({
-    model: AI_MODELS.sonnet,
-    max_tokens: 1024,
+    model: AI_MODELS.deep,
+    max_tokens: 4000,
+    // 부상 판단은 의학적 뉘앙스가 걸려 있어 생각을 켜둔다.
+    thinking: { type: 'adaptive' },
+    output_config: { effort: 'high' },
     messages: [{ role: 'user', content: prompt }],
   });
 

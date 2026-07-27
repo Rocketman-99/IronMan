@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { t } from '../../../src/i18n/ko';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { BarChart, LineChart } from 'react-native-gifted-charts';
@@ -20,9 +21,9 @@ export default function Progress() {
   useEffect(() => { load(); }, []);
 
   const TABS: { value: Tab; label: string }[] = [
-    { value: 'volume', label: '볼륨' },
-    { value: 'pace', label: '평균 페이스' },
-    { value: 'hr', label: '심박수' },
+    { value: 'volume', label: t.progress.volume },
+    { value: 'pace', label: t.log.avgPaceShort },
+    { value: 'hr', label: t.log.heartRate },
   ];
 
   const runWorkouts = recentWorkouts.filter(w => w.sport_type === 'running').slice(0, 10).reverse();
@@ -46,7 +47,7 @@ export default function Progress() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} tintColor={colors.primary} />}
     >
-      <Text style={styles.title}>성장 분석</Text>
+      <Text style={styles.title}>{t.progress.title}</Text>
 
       <View style={styles.tabRow}>
         {TABS.map(t => (
@@ -58,7 +59,7 @@ export default function Progress() {
 
       {tab === 'volume' && (
         <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>최근 7회 운동 거리 (km)</Text>
+          <Text style={styles.chartTitle}>{t.progress.distanceChart}</Text>
           {volumeData.length > 0 ? (
             <BarChart
               data={volumeData}
@@ -74,13 +75,13 @@ export default function Progress() {
               xAxisColor={colors.divider}
               hideRules
             />
-          ) : <Text style={styles.noData}>데이터가 없습니다</Text>}
+          ) : <Text style={styles.noData}>{t.common.noData}</Text>}
         </View>
       )}
 
       {tab === 'pace' && (
         <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>러닝 페이스 추세 (min/km)</Text>
+          <Text style={styles.chartTitle}>{t.progress.paceChart}</Text>
           {paceData.length > 1 ? (
             <LineChart
               data={paceData}
@@ -100,13 +101,13 @@ export default function Progress() {
               xAxisColor={colors.divider}
               hideRules
             />
-          ) : <Text style={styles.noData}>러닝 기록이 부족합니다</Text>}
+          ) : <Text style={styles.noData}>{t.progress.needRunning}</Text>}
         </View>
       )}
 
       {tab === 'hr' && (
         <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>평균 심박수 추세 (bpm)</Text>
+          <Text style={styles.chartTitle}>{t.progress.hrChart}</Text>
           {hrData.length > 1 ? (
             <LineChart
               data={hrData}
@@ -126,18 +127,18 @@ export default function Progress() {
               xAxisColor={colors.divider}
               hideRules
             />
-          ) : <Text style={styles.noData}>심박수 데이터가 부족합니다</Text>}
+          ) : <Text style={styles.noData}>{t.progress.needHr}</Text>}
         </View>
       )}
 
-      <Text style={styles.sectionTitle}>종목별 운동 수</Text>
+      <Text style={styles.sectionTitle}>{t.progress.sportBreakdown}</Text>
       {(['running', 'swimming', 'cycling'] as const).map(sport => {
         const count = recentWorkouts.filter(w => w.sport_type === sport).length;
         if (count === 0) return null;
         return (
           <View key={sport} style={[styles.sportRow, { borderLeftColor: sportColors[sport] }]}>
             <Text style={[styles.sportName, { color: sportColors[sport] }]}>
-              {sport === 'running' ? '러닝' : sport === 'swimming' ? '수영' : '사이클'}
+              {sport === 'running' ? t.sport.running : sport === 'swimming' ? t.sport.swimming : t.sport.cycling}
             </Text>
             <Text style={styles.sportCount}>{count}회</Text>
           </View>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../../../src/i18n/ko';
 import {
   View,
   Text,
@@ -48,7 +49,7 @@ export default function CyclingLog() {
   const estCalories = distanceM > 0 && profile?.weight_kg ? estimateCalories('cycling', totalSec, profile.weight_kg) : 0;
 
   async function handleSave() {
-    if (!distanceKm || !durationMin) { Alert.alert('오류', '거리와 시간을 입력하세요'); return; }
+    if (!distanceKm || !durationMin) { Alert.alert(t.common.error, t.log.needDistanceDuration); return; }
     setSaving(true);
     try {
       const workoutId = await saveWorkout(db, {
@@ -68,7 +69,7 @@ export default function CyclingLog() {
           bike_type: bikeType,
         },
       });
-      if (hasApiKey && workoutId && checkAndIncrementAIUsage('haiku')) {
+      if (hasApiKey && workoutId && checkAndIncrementAIUsage('fast')) {
         analyzeWorkoutAI(db, workoutId, profile);
       }
       router.back();
@@ -81,44 +82,44 @@ export default function CyclingLog() {
     <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
       <TouchableOpacity onPress={() => router.back()} style={styles.back}>
         <Ionicons name="chevron-back" size={24} color={colors.text} />
-        <Text style={styles.backText}>사이클 기록</Text>
+        <Text style={styles.backText}>{t.log.cyclingTitle}</Text>
       </TouchableOpacity>
 
       {speed > 0 && (
         <View style={styles.speedPreview}>
           <Text style={styles.speedValue}>{speed} km/h</Text>
-          <Text style={styles.speedLabel}>평균 속도</Text>
+          <Text style={styles.speedLabel}>{t.log.avgSpeed}</Text>
         </View>
       )}
 
-      <Text style={styles.label}>날짜</Text>
+      <Text style={styles.label}>{t.log.date}</Text>
       <TextInput style={styles.input} value={date} onChangeText={setDate} placeholderTextColor={colors.textMuted} />
 
-      <Text style={styles.label}>거리 (km)</Text>
+      <Text style={styles.label}>{t.log.distanceKm}</Text>
       <TextInput style={styles.input} placeholder="40" placeholderTextColor={colors.textMuted}
         value={distanceKm} onChangeText={setDistanceKm} keyboardType="decimal-pad" />
 
-      <Text style={styles.label}>시간</Text>
+      <Text style={styles.label}>{t.log.duration}</Text>
       <View style={styles.row}>
         <View style={styles.half}>
-          <TextInput style={styles.input} placeholder="분" placeholderTextColor={colors.textMuted}
+          <TextInput style={styles.input} placeholder={t.common.minute} placeholderTextColor={colors.textMuted}
             value={durationMin} onChangeText={setDurationMin} keyboardType="number-pad" />
         </View>
         <Text style={styles.timeSep}>:</Text>
         <View style={styles.half}>
-          <TextInput style={styles.input} placeholder="초" placeholderTextColor={colors.textMuted}
+          <TextInput style={styles.input} placeholder={t.common.second} placeholderTextColor={colors.textMuted}
             value={durationSec} onChangeText={setDurationSec} keyboardType="number-pad" />
         </View>
       </View>
 
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>평균 심박수</Text>
+          <Text style={styles.label}>{t.log.avgHr}</Text>
           <TextInput style={styles.input} placeholder="140" placeholderTextColor={colors.textMuted}
             value={avgHr} onChangeText={setAvgHr} keyboardType="number-pad" />
         </View>
         <View style={styles.half}>
-          <Text style={styles.label}>평균 파워 (W)</Text>
+          <Text style={styles.label}>{t.log.avgPower}</Text>
           <TextInput style={styles.input} placeholder="200" placeholderTextColor={colors.textMuted}
             value={avgPower} onChangeText={setAvgPower} keyboardType="number-pad" />
         </View>
@@ -126,18 +127,18 @@ export default function CyclingLog() {
 
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>케이던스 (rpm)</Text>
+          <Text style={styles.label}>{t.log.cadenceRpm}</Text>
           <TextInput style={styles.input} placeholder="90" placeholderTextColor={colors.textMuted}
             value={avgCadence} onChangeText={setAvgCadence} keyboardType="number-pad" />
         </View>
         <View style={styles.half}>
-          <Text style={styles.label}>등반 고도 (m)</Text>
+          <Text style={styles.label}>{t.log.elevation}</Text>
           <TextInput style={styles.input} placeholder="0" placeholderTextColor={colors.textMuted}
             value={elevation} onChangeText={setElevation} keyboardType="decimal-pad" />
         </View>
       </View>
 
-      <Text style={styles.label}>바이크 종류</Text>
+      <Text style={styles.label}>{t.log.bikeType}</Text>
       <View style={styles.chips}>
         {BIKE_TYPES.map(b => (
           <TouchableOpacity key={b.value} style={[styles.chip, bikeType === b.value && styles.chipActive]} onPress={() => setBikeType(b.value)}>
@@ -146,15 +147,15 @@ export default function CyclingLog() {
         ))}
       </View>
 
-      <Text style={styles.label}>컨디션</Text>
+      <Text style={styles.label}>{t.log.condition}</Text>
       <FeelingSelector value={feeling} onChange={setFeeling} />
 
-      <Text style={styles.label}>메모</Text>
-      <TextInput style={[styles.input, styles.textArea]} placeholder="훈련 내용..."
+      <Text style={styles.label}>{t.log.notes}</Text>
+      <TextInput style={[styles.input, styles.textArea]} placeholder={t.log.notesShort}
         placeholderTextColor={colors.textMuted} value={notes} onChangeText={setNotes} multiline numberOfLines={3} />
 
       <TouchableOpacity style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving}>
-        <Text style={styles.saveBtnText}>{saving ? '저장 중...' : '훈련 저장'}</Text>
+        <Text style={styles.saveBtnText}>{saving ? t.common.saving : t.log.submit}</Text>
       </TouchableOpacity>
     </KeyboardAwareScrollView>
   );

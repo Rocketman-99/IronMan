@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import { t } from '../../../src/i18n/ko';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -40,7 +41,7 @@ export default function Goals() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>목표 관리</Text>
+        <Text style={styles.title}>{t.goals.title}</Text>
         <TouchableOpacity onPress={() => router.push('/(app)/goals/new')} style={styles.addBtn}>
           <Ionicons name="add" size={24} color={colors.primary} />
         </TouchableOpacity>
@@ -57,9 +58,9 @@ export default function Goals() {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>설정된 목표가 없어요</Text>
+            <Text style={styles.emptyText}>{t.goals.empty}</Text>
             <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(app)/goals/new')}>
-              <Text style={styles.emptyBtnText}>+ 목표 추가</Text>
+              <Text style={styles.emptyBtnText}>{t.goals.add}</Text>
             </TouchableOpacity>
           </View>
         }

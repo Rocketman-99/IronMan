@@ -5,8 +5,8 @@ import { API_KEY_STORAGE_KEY, saveAPIKey } from '../services/ai/client';
 import { getTodayKST } from '../utils/formatters';
 
 const MODEL_COSTS: Record<string, number> = {
-  haiku: AI_LIMITS.haikuCost,
-  sonnet: AI_LIMITS.sonnetCost,
+  fast: AI_LIMITS.fastCost,
+  deep: AI_LIMITS.deepCost,
 };
 
 interface AppState {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../../src/i18n/ko';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
@@ -23,11 +24,11 @@ export default function OnboardingWelcome() {
       <View style={styles.content}>
         <Text style={styles.logo}>🏊🚴🏃</Text>
         <Text style={styles.title}>IronMan</Text>
-        <Text style={styles.subtitle}>트라이애슬론 훈련 파트너</Text>
-        <Text style={styles.label}>이름을 알려주세요</Text>
+        <Text style={styles.subtitle}>{t.onboarding.tagline}</Text>
+        <Text style={styles.label}>{t.onboarding.askName}</Text>
         <TextInput
           style={styles.input}
-          placeholder="이름 입력"
+          placeholder={t.onboarding.namePlaceholder}
           placeholderTextColor={colors.textMuted}
           value={name}
           onChangeText={setName}
@@ -40,7 +41,7 @@ export default function OnboardingWelcome() {
           onPress={handleNext}
           disabled={!name.trim()}
         >
-          <Text style={styles.btnText}>시작하기 →</Text>
+          <Text style={styles.btnText}>{t.common.start}</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

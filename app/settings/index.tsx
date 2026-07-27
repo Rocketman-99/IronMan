@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from 'react';
+import { AI_MODEL_NAMES } from '../../src/config/api';
+import { t } from '../../src/i18n/ko';
 import {
   View,
   Text,
   TextInput,
   StyleSheet,
-  SafeAreaView,
   Alert,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppStore } from '../../../src/stores/appStore';
-import { getAPIKey } from '../../../src/services/ai/client';
-import { Button } from '../../../src/components/common/Button';
-import { Card } from '../../../src/components/common/Card';
-import { colors } from '../../../src/utils/theme';
+import { useAppStore } from '../../src/stores/appStore';
+import { getAPIKey } from '../../src/services/ai/client';
+import { Button } from '../../src/components/common/Button';
+import { Card } from '../../src/components/common/Card';
+import { colors } from '../../src/utils/theme';
 
 export default function SettingsScreen() {
   const { hasApiKey, setApiKey, clearApiKey, aiCallsToday } = useAppStore();
@@ -34,28 +36,28 @@ export default function SettingsScreen() {
 
   async function handleSave() {
     const key = apiKeyInput.trim();
-    if (!key) return Alert.alert('API 키를 입력해주세요');
+    if (!key) return Alert.alert(t.settings.keyRequired);
     if (!key.startsWith('sk-ant-')) {
-      return Alert.alert('잘못된 형식', 'Anthropic API 키는 sk-ant- 로 시작해야 합니다.');
+      return Alert.alert(t.settings.invalidFormat, t.settings.keyFormat);
     }
     setSaving(true);
     try {
       await setApiKey(key);
       setMaskedKey(`sk-ant-...${key.slice(-6)}`);
       setApiKeyInput('');
-      Alert.alert('저장 완료', 'API 키가 안전하게 저장되었습니다.');
+      Alert.alert(t.common.saved, t.settings.keySaved);
     } catch {
-      Alert.alert('오류', 'API 키 저장 중 오류가 발생했습니다.');
+      Alert.alert(t.common.error, t.settings.keySaveError);
     } finally {
       setSaving(false);
     }
   }
 
   async function handleRemove() {
-    Alert.alert('API 키 삭제', 'API 키를 삭제하면 AI 기능을 사용할 수 없습니다. 계속할까요?', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(t.settings.removeKey, t.settings.removeConfirm, [
+      { text: t.common.cancel, style: 'cancel' },
       {
-        text: '삭제', style: 'destructive',
+        text: t.common.delete, style: 'destructive',
         onPress: async () => {
           setRemoving(true);
           try {
@@ -74,16 +76,16 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>설정</Text>
+        <Text style={styles.title}>{t.settings.title}</Text>
       </View>
       <KeyboardAwareScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
 
-        <Text style={styles.sectionTitle}>AI 코치 설정</Text>
+        <Text style={styles.sectionTitle}>{t.settings.aiSection}</Text>
 
         <Card style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="key-outline" size={18} color={colors.gold} />
-            <Text style={styles.cardTitle}>Anthropic API 키</Text>
+            <Text style={styles.cardTitle}>{t.settings.apiKeyTitle}</Text>
           </View>
 
           {hasApiKey ? (
@@ -91,13 +93,13 @@ export default function SettingsScreen() {
               <View style={styles.keyRow}>
                 <View style={styles.keyStatus}>
                   <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-                  <Text style={styles.keyStatusText}>연결됨</Text>
+                  <Text style={styles.keyStatusText}>{t.settings.connected}</Text>
                 </View>
                 <Text style={styles.maskedKey}>{maskedKey}</Text>
               </View>
               <View style={styles.usageWrap}>
                 <View style={styles.usageHeader}>
-                  <Text style={styles.usageLabel}>오늘 AI 사용량</Text>
+                  <Text style={styles.usageLabel}>{t.settings.usageToday}</Text>
                   <Text style={styles.usageValue}>{aiCallsToday.toFixed(1)} / 15 포인트</Text>
                 </View>
                 <View style={styles.usageBg}>
@@ -108,7 +110,7 @@ export default function SettingsScreen() {
                 </View>
               </View>
               <Button
-                label="API 키 삭제"
+                label={t.settings.removeKey}
                 onPress={handleRemove}
                 variant="danger"
                 loading={removing}
@@ -126,7 +128,7 @@ export default function SettingsScreen() {
                   style={styles.keyInput}
                   value={apiKeyInput}
                   onChangeText={setApiKeyInput}
-                  placeholder="sk-ant-api03-..."
+                  placeholder={t.settings.apiKeyPlaceholder}
                   placeholderTextColor={colors.textMuted}
                   secureTextEntry={!showKey}
                   autoCapitalize="none"
@@ -136,30 +138,30 @@ export default function SettingsScreen() {
                   <Ionicons name={showKey ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
-              <Button label="저장" onPress={handleSave} loading={saving} style={styles.saveBtn} />
+              <Button label={t.common.save} onPress={handleSave} loading={saving} style={styles.saveBtn} />
             </View>
           )}
         </Card>
 
-        <Text style={[styles.sectionTitle, styles.sectionSpaced]}>AI 모델 정보</Text>
+        <Text style={[styles.sectionTitle, styles.sectionSpaced]}>{t.settings.modelSection}</Text>
         <Card style={styles.card}>
-          <ModelRow icon="flash-outline" label="빠른 분석 / 팁 / 채팅" model="Claude Haiku" cost="0.5 포인트" />
+          <ModelRow icon="flash-outline" label={t.settings.modelFast} model={AI_MODEL_NAMES.fast} cost={t.settings.pointsFast} />
           <View style={styles.divider} />
-          <ModelRow icon="analytics-outline" label="부상 평가 / 훈련 계획" model="Claude Sonnet" cost="2 포인트" />
+          <ModelRow icon="analytics-outline" label={t.settings.modelDeep} model={AI_MODEL_NAMES.deep} cost={t.settings.pointsDeep} />
           <View style={styles.divider} />
           <View style={styles.budgetNote}>
             <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.budgetNoteText}>일일 총 한도: 15 포인트 (매일 자정 초기화)</Text>
+            <Text style={styles.budgetNoteText}>{t.settings.dailyLimitNote}</Text>
           </View>
         </Card>
 
-        <Text style={[styles.sectionTitle, styles.sectionSpaced]}>앱 정보</Text>
+        <Text style={[styles.sectionTitle, styles.sectionSpaced]}>{t.settings.appSection}</Text>
         <Card style={styles.card}>
-          <InfoRow label="앱 이름" value="IronMan" />
+          <InfoRow label={t.settings.appName} value="IronMan" />
           <View style={styles.divider} />
-          <InfoRow label="버전" value="1.0.0" />
+          <InfoRow label={t.settings.version} value="1.0.0" />
           <View style={styles.divider} />
-          <InfoRow label="플랫폼" value="iOS / Android" />
+          <InfoRow label={t.settings.platform} value="iOS / Android" />
         </Card>
 
       </KeyboardAwareScrollView>

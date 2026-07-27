@@ -1,20 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
+import { MarkdownText } from '../../src/components/common/MarkdownText';
+import { t } from '../../src/i18n/ko';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../../src/utils/theme';
-import { useAIStore } from '../../../src/stores/aiStore';
-import { useProfileStore } from '../../../src/stores/profileStore';
-import { useAppStore } from '../../../src/stores/appStore';
-import { type Message } from '../../../src/types';
+import { colors } from '../../src/utils/theme';
+import { useAIStore } from '../../src/stores/aiStore';
+import { useProfileStore } from '../../src/stores/profileStore';
+import { useAppStore } from '../../src/stores/appStore';
+import { type Message } from '../../src/types';
 
 const QUICK_PROMPTS = [
-  '오늘 어떤 훈련을 할까요?',
-  '회복 훈련 방법 알려주세요',
-  '수영 실력 향상 팁',
-  '사이클 설낙한 훈련 하는 법',
+  ...t.ai.quickPrompts,
 ];
 
 function ChatBubble({ msg }: { msg: Message }) {
@@ -22,7 +21,11 @@ function ChatBubble({ msg }: { msg: Message }) {
   return (
     <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
       {!isUser && <Ionicons name="sparkles" size={12} color={colors.gold} style={styles.aiIcon} />}
-      <Text style={[styles.bubbleText, isUser ? styles.userText : styles.aiText]}>{msg.content}</Text>
+      {isUser ? (
+        <Text style={[styles.bubbleText, styles.userText]}>{msg.content}</Text>
+      ) : (
+        <MarkdownText style={[styles.bubbleText, styles.aiText]}>{msg.content}</MarkdownText>
+      )}
     </View>
   );
 }
@@ -42,7 +45,7 @@ export default function AICoach() {
     const msg = (text ?? input).trim();
     if (!msg || isStreaming) return;
     if (!hasApiKey) { return; }
-    if (!checkAndIncrementAIUsage('haiku')) return;
+    if (!checkAndIncrementAIUsage('fast')) return;
     setInput('');
     await sendChat(db, msg, profile);
   }
@@ -51,15 +54,15 @@ export default function AICoach() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}><Ionicons name="chevron-back" size={24} color={colors.text} /></TouchableOpacity>
-        <Text style={styles.title}>AI 코치</Text>
+        <Text style={styles.title}>{t.dashboard.aiCoach}</Text>
         <TouchableOpacity onPress={clearChat}><Ionicons name="trash-outline" size={20} color={colors.textMuted} /></TouchableOpacity>
       </View>
 
       {!hasApiKey && (
         <View style={styles.noApiKey}>
-          <Text style={styles.noApiText}>AI 코치를 사용하려면 API 키를 설정하세요</Text>
-          <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={styles.apiBtn}>
-            <Text style={styles.apiBtnText}>설정으로 이동</Text>
+          <Text style={styles.noApiText}>{t.ai.needApiKey}</Text>
+          <TouchableOpacity onPress={() => router.push('/settings')} style={styles.apiBtn}>
+            <Text style={styles.apiBtnText}>{t.ai.goSettings}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -73,7 +76,7 @@ export default function AICoach() {
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           <View style={styles.emptyChat}>
-            <Text style={styles.emptyChatText}>AI 코치에게 무엇이든 물어보세요!</Text>
+            <Text style={styles.emptyChatText}>{t.ai.coachEmpty}</Text>
             <View style={styles.quickList}>
               {QUICK_PROMPTS.map(q => (
                 <TouchableOpacity key={q} style={styles.quickBtn} onPress={() => handleSend(q)}>
@@ -90,7 +93,7 @@ export default function AICoach() {
       <KeyboardStickyView style={styles.inputRow}>
         <TextInput
           style={styles.input}
-          placeholder="코치에게 질문하세요..."
+          placeholder={t.ai.coachPlaceholder}
           placeholderTextColor={colors.textMuted}
           value={input}
           onChangeText={setInput}

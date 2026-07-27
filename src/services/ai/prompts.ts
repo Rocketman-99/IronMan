@@ -6,7 +6,7 @@ import {
   formatWorkoutDate,
   calcAge,
 } from '../../utils/formatters';
-import { sportLabels, fitnessLevelLabels, raceTypeLabels } from '../../utils/theme';
+import { t, sportLabels, fitnessLevelLabels, raceTypeLabels } from '../../i18n/ko';
 
 export function profileSummary(profile: UserProfile): string {
   const age = profile.birth_date ? `${calcAge(profile.birth_date)}세` : '나이 미기입';
@@ -59,7 +59,8 @@ ${workoutLines || '기록 없음'}
 - 부상 방지는 스포츠 의학 원칙을 근거로 설명하세요.
 - 훈련 추천 시 사용자의 피트니스 레벨(${fitnessLevelLabels[profile.fitness_level]})에 맞는 강도와 훈련 존을 적용하세요.
 - 필요하면 먼저 질문을 통해 상황을 파악한 후 조언하세요.
-- 답변은 명확하고 간결하게, 지나치게 길지 않게 해주세요.`;
+- 답변은 명확하고 간결하게, 지나치게 길지 않게 해주세요.
+- ${t.aiPrompt.formatting}`;
 }
 
 export function buildPostWorkoutPrompt(
@@ -82,7 +83,7 @@ export function buildPostWorkoutPrompt(
     const s = workout.swimming;
     details = `
 - 수영장 길이: ${s.pool_length_m}m
-- 켝 랩: ${s.total_laps ?? '미기록'}
+- 총 랩: ${s.total_laps ?? '미기록'}
 - 영법: ${s.stroke_type ?? '미기록'}
 - 100m 페이스: ${s.avg_pace_sec_100m ? formatPace(s.avg_pace_sec_100m) : '미기록'}`;
   } else if (workout.sport_type === 'cycling' && workout.cycling) {
@@ -170,8 +171,8 @@ export function buildInjuryRiskPrompt(
 사용자: ${profileSummary(profile)}
 
 최근 30일 운동 데이터:
-- 켝 운동 횟수: ${totalWorkouts}회
-- 켝 거리: ${totalDistanceKm.toFixed(1)}km
+- 총 운동 횟수: ${totalWorkouts}회
+- 총 거리: ${totalDistanceKm.toFixed(1)}km
 - 평균 느낌 점수: ${avgFeeling.toFixed(1)}/5
 - 급성:만성 부하비율(ACWR): ${acwr}
 - 최근 7일 운동: ${last7.length}회

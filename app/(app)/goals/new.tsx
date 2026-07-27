@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../../../src/i18n/ko';
 import {
   View,
   Text,
@@ -16,20 +17,20 @@ import { useGoalsStore } from '../../../src/stores/goalsStore';
 import { type SportType, type GoalType, type GoalPeriod } from '../../../src/types';
 
 const SPORTS: { value: SportType | 'general'; label: string }[] = [
-  { value: 'running', label: '러닝' },
-  { value: 'swimming', label: '수영' },
-  { value: 'cycling', label: '사이클' },
+  { value: 'running', label: t.sport.running },
+  { value: 'swimming', label: t.sport.swimming },
+  { value: 'cycling', label: t.sport.cycling },
 ];
 const GOAL_TYPES: { value: GoalType; label: string }[] = [
-  { value: 'distance', label: '거리' },
-  { value: 'time', label: '시간' },
-  { value: 'frequency', label: '횟수' },
-  { value: 'pace', label: '페이스' },
+  { value: 'distance', label: t.goalType.distance },
+  { value: 'time', label: t.log.duration },
+  { value: 'frequency', label: t.goalType.frequency },
+  { value: 'pace', label: t.goalType.pace },
 ];
 const PERIODS: { value: GoalPeriod; label: string }[] = [
-  { value: 'weekly', label: '주간' },
-  { value: 'monthly', label: '월간' },
-  { value: 'total', label: '누적' },
+  { value: 'weekly', label: t.goalPeriod.weekly },
+  { value: 'monthly', label: t.goalPeriod.monthly },
+  { value: 'total', label: t.goalPeriod.total },
 ];
 
 export default function NewGoal() {
@@ -47,7 +48,7 @@ export default function NewGoal() {
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
-    if (!title || !targetValue) { Alert.alert('오류', '제목과 목표치를 입력하세요'); return; }
+    if (!title || !targetValue) { Alert.alert(t.common.error, t.goals.needTitleValue); return; }
     setSaving(true);
     try {
       await createGoal(db, {
@@ -67,10 +68,10 @@ export default function NewGoal() {
     <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
       <TouchableOpacity onPress={() => router.back()} style={styles.back}>
         <Ionicons name="chevron-back" size={24} color={colors.text} />
-        <Text style={styles.backText}>새 목표</Text>
+        <Text style={styles.backText}>{t.goals.newTitle}</Text>
       </TouchableOpacity>
 
-      <Text style={styles.label}>종목</Text>
+      <Text style={styles.label}>{t.goals.sport}</Text>
       <View style={styles.chips}>
         {SPORTS.map(s => (
           <TouchableOpacity key={s.value} style={[styles.chip, sport === s.value && styles.chipActive]} onPress={() => setSport(s.value)}>
@@ -79,7 +80,7 @@ export default function NewGoal() {
         ))}
       </View>
 
-      <Text style={styles.label}>목표 유형</Text>
+      <Text style={styles.label}>{t.goals.goalType}</Text>
       <View style={styles.chips}>
         {GOAL_TYPES.map(g => (
           <TouchableOpacity key={g.value} style={[styles.chip, goalType === g.value && styles.chipActive]} onPress={() => setGoalType(g.value)}>
@@ -88,24 +89,24 @@ export default function NewGoal() {
         ))}
       </View>
 
-      <Text style={styles.label}>목표 제목</Text>
-      <TextInput style={styles.input} placeholder="예: 주간 30km 러닝" placeholderTextColor={colors.textMuted}
+      <Text style={styles.label}>{t.goals.goalTitle}</Text>
+      <TextInput style={styles.input} placeholder={t.goals.goalTitlePlaceholder} placeholderTextColor={colors.textMuted}
         value={title} onChangeText={setTitle} />
 
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>목표치</Text>
+          <Text style={styles.label}>{t.goals.targetValue}</Text>
           <TextInput style={styles.input} placeholder="30" placeholderTextColor={colors.textMuted}
             value={targetValue} onChangeText={setTargetValue} keyboardType="decimal-pad" />
         </View>
         <View style={styles.half}>
-          <Text style={styles.label}>단위</Text>
+          <Text style={styles.label}>{t.goals.unit}</Text>
           <TextInput style={styles.input} placeholder="km" placeholderTextColor={colors.textMuted}
             value={unit} onChangeText={setUnit} />
         </View>
       </View>
 
-      <Text style={styles.label}>기간</Text>
+      <Text style={styles.label}>{t.goals.period}</Text>
       <View style={styles.chips}>
         {PERIODS.map(p => (
           <TouchableOpacity key={p.value} style={[styles.chip, period === p.value && styles.chipActive]} onPress={() => setPeriod(p.value)}>
@@ -114,12 +115,12 @@ export default function NewGoal() {
         ))}
       </View>
 
-      <Text style={styles.label}>목표 날짜 (선택)</Text>
-      <TextInput style={styles.input} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted}
+      <Text style={styles.label}>{t.goals.targetDate}</Text>
+      <TextInput style={styles.input} placeholder={t.profile.birthDateFormat} placeholderTextColor={colors.textMuted}
         value={targetDate} onChangeText={setTargetDate} />
 
       <TouchableOpacity style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving}>
-        <Text style={styles.saveBtnText}>{saving ? '저장 중...' : '목표 저장'}</Text>
+        <Text style={styles.saveBtnText}>{saving ? t.common.saving : t.goals.submit}</Text>
       </TouchableOpacity>
     </KeyboardAwareScrollView>
   );

@@ -1,8 +1,10 @@
+import { t } from '../i18n/ko';
+
 export const HR_ZONES = [
   { zone: 1, label: '회복', min: 0.5, max: 0.6, color: '#3498DB' },
   { zone: 2, label: '기초 유산소', min: 0.6, max: 0.7, color: '#2ECC71' },
   { zone: 3, label: '유산소', min: 0.7, max: 0.8, color: '#F39C12' },
-  { zone: 4, label: '젠산 역치', min: 0.8, max: 0.9, color: '#E67E22' },
+  { zone: 4, label: t.hrZone[4], min: 0.8, max: 0.9, color: '#E67E22' },
   { zone: 5, label: '최대 강도', min: 0.9, max: 1.0, color: '#E74C3C' },
 ] as const;
 
@@ -58,8 +60,3 @@ export const RACE_TYPES = [
   { value: 'full_ironman', label: '풀 아이언맨', detail: '수영 3.8km / 사이클 180km / 러닝 42km' },
 ] as const;
 
-export const AI_COST = {
-  haiku: 0.5,
-  sonnet: 2,
-  dailyLimit: 15,
-} as const;

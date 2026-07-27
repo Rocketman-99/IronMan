@@ -28,12 +28,12 @@ const screens: ScreenCase[] = [
   ['(app)/progress/index', () => require('../app/(app)/progress/index')],
   ['(app)/goals/index', () => require('../app/(app)/goals/index')],
   ['(app)/goals/new', () => require('../app/(app)/goals/new')],
-  ['(app)/workout/[id]', () => require('../app/(app)/workout/[id]')],
-  ['(app)/ai/coach', () => require('../app/(app)/ai/coach')],
-  ['(app)/ai/injury', () => require('../app/(app)/ai/injury')],
-  ['(app)/ai/plan', () => require('../app/(app)/ai/plan')],
-  ['(app)/profile/index', () => require('../app/(app)/profile/index')],
-  ['(app)/settings/index', () => require('../app/(app)/settings/index')],
+  ['workout/[id]', () => require('../app/workout/[id]')],
+  ['ai/coach', () => require('../app/ai/coach')],
+  ['ai/injury', () => require('../app/ai/injury')],
+  ['ai/plan', () => require('../app/ai/plan')],
+  ['profile/index', () => require('../app/profile/index')],
+  ['settings/index', () => require('../app/settings/index')],
 ];
 
 describe('route screens mount', () => {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../../../src/i18n/ko';
 import {
   View,
   Text,
@@ -45,7 +46,7 @@ export default function SwimmingLog() {
   const distanceM = totalLaps * poolM;
 
   async function handleSave() {
-    if (!laps || !durationMin) { Alert.alert('오류', '랩 수와 시간을 입력하세요'); return; }
+    if (!laps || !durationMin) { Alert.alert(t.common.error, t.log.needLapsDuration); return; }
     setSaving(true);
     try {
       const workoutId = await saveWorkout(db, {
@@ -63,7 +64,7 @@ export default function SwimmingLog() {
           stroke_type: strokeType,
         },
       });
-      if (hasApiKey && workoutId && checkAndIncrementAIUsage('haiku')) {
+      if (hasApiKey && workoutId && checkAndIncrementAIUsage('fast')) {
         analyzeWorkoutAI(db, workoutId, profile);
       }
       router.back();
@@ -76,20 +77,20 @@ export default function SwimmingLog() {
     <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" bottomOffset={24}>
       <TouchableOpacity onPress={() => router.back()} style={styles.back}>
         <Ionicons name="chevron-back" size={24} color={colors.text} />
-        <Text style={styles.backText}>수영 기록</Text>
+        <Text style={styles.backText}>{t.log.swimmingTitle}</Text>
       </TouchableOpacity>
 
       {distanceM > 0 && (
         <View style={styles.distPreview}>
           <Text style={styles.distValue}>{distanceM}m</Text>
-          <Text style={styles.distLabel}>수영 거리</Text>
+          <Text style={styles.distLabel}>{t.log.swimDistance}</Text>
         </View>
       )}
 
-      <Text style={styles.label}>날짜</Text>
+      <Text style={styles.label}>{t.log.date}</Text>
       <TextInput style={styles.input} value={date} onChangeText={setDate} placeholderTextColor={colors.textMuted} />
 
-      <Text style={styles.label}>수영장 길이</Text>
+      <Text style={styles.label}>{t.log.poolLength}</Text>
       <View style={styles.chips}>
         {['25', '50'].map(l => (
           <TouchableOpacity key={l} style={[styles.chip, poolLength === l && styles.chipActive]} onPress={() => setPoolLength(l)}>
@@ -102,20 +103,20 @@ export default function SwimmingLog() {
       <TextInput style={styles.input} placeholder="40" placeholderTextColor={colors.textMuted}
         value={laps} onChangeText={setLaps} keyboardType="number-pad" />
 
-      <Text style={styles.label}>시간</Text>
+      <Text style={styles.label}>{t.log.duration}</Text>
       <View style={styles.row}>
         <View style={styles.half}>
-          <TextInput style={styles.input} placeholder="분" placeholderTextColor={colors.textMuted}
+          <TextInput style={styles.input} placeholder={t.common.minute} placeholderTextColor={colors.textMuted}
             value={durationMin} onChangeText={setDurationMin} keyboardType="number-pad" />
         </View>
         <Text style={styles.timeSep}>:</Text>
         <View style={styles.half}>
-          <TextInput style={styles.input} placeholder="초" placeholderTextColor={colors.textMuted}
+          <TextInput style={styles.input} placeholder={t.common.second} placeholderTextColor={colors.textMuted}
             value={durationSec} onChangeText={setDurationSec} keyboardType="number-pad" />
         </View>
       </View>
 
-      <Text style={styles.label}>영법</Text>
+      <Text style={styles.label}>{t.log.strokeType}</Text>
       <View style={styles.chips}>
         {STROKE_TYPES.map(s => (
           <TouchableOpacity key={s.value} style={[styles.chip, strokeType === s.value && styles.chipActive]} onPress={() => setStrokeType(s.value)}>
@@ -124,19 +125,19 @@ export default function SwimmingLog() {
         ))}
       </View>
 
-      <Text style={styles.label}>평균 심박수</Text>
+      <Text style={styles.label}>{t.log.avgHr}</Text>
       <TextInput style={styles.input} placeholder="140" placeholderTextColor={colors.textMuted}
         value={avgHr} onChangeText={setAvgHr} keyboardType="number-pad" />
 
-      <Text style={styles.label}>컨디션</Text>
+      <Text style={styles.label}>{t.log.condition}</Text>
       <FeelingSelector value={feeling} onChange={setFeeling} />
 
-      <Text style={styles.label}>메모</Text>
-      <TextInput style={[styles.input, styles.textArea]} placeholder="훈련 내용..."
+      <Text style={styles.label}>{t.log.notes}</Text>
+      <TextInput style={[styles.input, styles.textArea]} placeholder={t.log.notesShort}
         placeholderTextColor={colors.textMuted} value={notes} onChangeText={setNotes} multiline numberOfLines={3} />
 
       <TouchableOpacity style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving}>
-        <Text style={styles.saveBtnText}>{saving ? '저장 중...' : '훈련 저장'}</Text>
+        <Text style={styles.saveBtnText}>{saving ? t.common.saving : t.log.submit}</Text>
       </TouchableOpacity>
     </KeyboardAwareScrollView>
   );
