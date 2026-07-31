@@ -11,8 +11,9 @@ export async function getAllGoals(db: SQLiteDatabase): Promise<Goal[]> {
 export async function createGoal(db: SQLiteDatabase, goal: NewGoal): Promise<number> {
   const now = getNowKST();
   const result = await db.runAsync(
-    `INSERT INTO goals (sport_type, goal_type, title, target_value, unit, period, target_date, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO goals
+       (sport_type, goal_type, title, target_value, unit, period, target_date, race_type, race_date, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     goal.sport_type,
     goal.goal_type,
     goal.title,
@@ -20,6 +21,8 @@ export async function createGoal(db: SQLiteDatabase, goal: NewGoal): Promise<num
     goal.unit,
     goal.period ?? null,
     goal.target_date ?? null,
+    goal.race_type ?? null,
+    goal.race_date ?? null,
     now
   );
   return result.lastInsertRowId;
@@ -29,43 +32,48 @@ export async function deleteGoal(db: SQLiteDatabase, id: number): Promise<void> 
   await db.runAsync('DELETE FROM goals WHERE id = ?', id);
 }
 
+/** 레이스 완주는 운동 기록으로 판정할 수 없어 사용자가 직접 표시한다. */
+export async function completeGoal(db: SQLiteDatabase, id: number): Promise<void> {
+  await db.runAsync(
+    'UPDATE goals SET is_completed = 1, completed_at = ? WHERE id = ?',
+    getNowKST(),
+    id
+  );
+}
+
+/** 기간별 날짜 필터. `once` 는 기간 제한이 없어 전체를 누적한다. */
+function dateFilter(period: Goal['period']): string {
+  if (period === 'weekly') return `AND workout_date >= date('now', '-7 days', '+9 hours')`;
+  if (period === 'monthly') return `AND workout_date >= date('now', 'start of month', '+9 hours')`;
+  return '';
+}
+
 export async function syncGoalProgress(db: SQLiteDatabase): Promise<void> {
   const goals = await getAllGoals(db);
   const now = getNowKST();
 
   for (const goal of goals) {
     if (goal.is_completed) continue;
+    // 레이스 목표는 운동 기록에서 진행률을 뽑을 수 없다 — 위 completeGoal 로 처리한다.
+    if (goal.goal_type === 'race') continue;
 
     let current = 0;
+    const filter = dateFilter(goal.period);
 
     if (goal.goal_type === 'distance' && goal.sport_type !== 'general') {
-      const dateFilter =
-        goal.period === 'weekly'
-          ? `AND workout_date >= date('now', '-7 days', '+9 hours')`
-          : goal.period === 'monthly'
-          ? `AND workout_date >= date('now', 'start of month', '+9 hours')`
-          : '';
-
       const row = await db.getFirstAsync<{ total: number }>(
         `SELECT COALESCE(SUM(distance_m), 0) as total
          FROM workouts
-         WHERE sport_type = ? ${dateFilter}`,
+         WHERE sport_type = ? ${filter}`,
         goal.sport_type
       );
-      current = (row?.total ?? 0) / 1000;
+      current = (row?.total ?? 0) / 1000; // m -> km
     } else if (goal.goal_type === 'frequency') {
-      const dateFilter =
-        goal.period === 'weekly'
-          ? `AND workout_date >= date('now', '-7 days', '+9 hours')`
-          : goal.period === 'monthly'
-          ? `AND workout_date >= date('now', 'start of month', '+9 hours')`
-          : '';
-
       const sportFilter =
         goal.sport_type !== 'general' ? `AND sport_type = '${goal.sport_type}'` : '';
 
       const row = await db.getFirstAsync<{ count: number }>(
-        `SELECT COUNT(*) as count FROM workouts WHERE 1=1 ${sportFilter} ${dateFilter}`
+        `SELECT COUNT(*) as count FROM workouts WHERE 1=1 ${sportFilter} ${filter}`
       );
       current = row?.count ?? 0;
     }

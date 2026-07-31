@@ -1,10 +1,12 @@
 import { create } from 'zustand';
+import { t } from '../i18n/ko';
 import { type SQLiteDatabase } from 'expo-sqlite';
 import { type Message, type InjuryRiskAssessment, type TrainingPlan, type UserProfile } from '../types';
 import { getDailyTip } from '../services/ai/dailyTip';
 import { sendChatMessage } from '../services/ai/chat';
 import { assessInjuryRisk } from '../services/ai/injuryRisk';
 import { generateTrainingPlan } from '../services/ai/trainingPlan';
+import { buildTrainingContext, type TrainingContext } from '../services/ai/context';
 import { analyzeWorkout } from '../services/ai/postWorkoutAnalysis';
 import { getRecentWorkouts, updateAIAnalysis, getWorkoutById, getWorkoutsBySport } from '../db/queries/workouts';
 import { getTodayKST } from '../utils/formatters';
@@ -18,6 +20,11 @@ interface AIState {
   isStreaming: boolean;
   isLoading: boolean;
   lastError: string | null;
+  /** 깊은 분석 진행 상태 — 화면의 진행 표시가 읽는다. */
+  progressChars: number;
+  startedAt: number | null;
+  /** 이번 생성에 실제로 투입된 근거. 결과 화면의 "고려한 정보"에 쓴다. */
+  lastContext: TrainingContext | null;
 
   fetchDailyTip: (db: SQLiteDatabase, profile: UserProfile | null) => Promise<void>;
   sendChat: (db: SQLiteDatabase, text: string, profile: UserProfile | null) => Promise<void>;
@@ -35,7 +42,7 @@ interface AIState {
 }
 
 const FALLBACK_PROFILE: UserProfile = {
-  id: 1, name: '트레이니', birth_date: null, gender: null,
+  id: 1, name: t.aiPrompt.fallbackName, birth_date: null, gender: null,
   height_cm: null, weight_kg: null, fitness_level: 'beginner',
   primary_goal: null, target_race_date: null, weekly_hours: 5,
   resting_hr: null, max_hr: null, onboarding_done: 1,
@@ -50,6 +57,9 @@ export const useAIStore = create<AIState>((set, get) => ({
   chatMessages: [],
   isStreaming: false,
   isLoading: false,
+  progressChars: 0,
+  startedAt: null,
+  lastContext: null,
   lastError: null,
 
   setDailyTip: (tip, date) => set({ dailyTip: tip, dailyTipDate: date }),
@@ -106,25 +116,31 @@ export const useAIStore = create<AIState>((set, get) => ({
 
   fetchInjuryRisk: async (db, profile) => {
     if (!profile) return;
-    set({ isLoading: true });
+    set({ isLoading: true, progressChars: 0, startedAt: Date.now() });
     try {
-      const workouts = await getRecentWorkouts(db, 30);
-      const assessment = await assessInjuryRisk(profile, workouts);
-      set({ injuryAssessment: assessment, isLoading: false });
+      const context = await buildTrainingContext(db, profile);
+      set({ lastContext: context });
+      const assessment = await assessInjuryRisk(profile, context, (n) =>
+        set({ progressChars: n })
+      );
+      set({ injuryAssessment: assessment, isLoading: false, startedAt: null });
     } catch (e) {
-      set({ lastError: String(e), isLoading: false });
+      set({ lastError: String(e), isLoading: false, startedAt: null });
     }
   },
 
   generatePlan: async (db, profile) => {
     if (!profile) return;
-    set({ isLoading: true });
+    set({ isLoading: true, progressChars: 0, startedAt: Date.now() });
     try {
-      const workouts = await getRecentWorkouts(db, 14);
-      const plan = await generateTrainingPlan(profile, workouts);
-      set({ trainingPlan: plan, isLoading: false });
+      const context = await buildTrainingContext(db, profile);
+      set({ lastContext: context });
+      const plan = await generateTrainingPlan(profile, context, (n) =>
+        set({ progressChars: n })
+      );
+      set({ trainingPlan: plan, isLoading: false, startedAt: null });
     } catch (e) {
-      set({ lastError: String(e), isLoading: false });
+      set({ lastError: String(e), isLoading: false, startedAt: null });
     }
   },
 

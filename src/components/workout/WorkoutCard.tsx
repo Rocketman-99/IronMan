@@ -75,7 +75,7 @@ export function WorkoutCard({ workout }: WorkoutCardProps) {
       <View style={styles.metrics}>
         <View style={styles.metric}>
           <Text style={styles.metricValue}>{getPrimaryMetric()}</Text>
-          <Text style={styles.metricLabel}>거리</Text>
+          <Text style={styles.metricLabel}>{t.log.distance}</Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.metric}>
@@ -86,7 +86,7 @@ export function WorkoutCard({ workout }: WorkoutCardProps) {
         <View style={styles.metric}>
           <Text style={styles.metricValue}>{getSecondaryMetric()}</Text>
           <Text style={styles.metricLabel}>
-            {workout.sport_type === 'running' ? '페이스' : workout.sport_type === 'cycling' ? '평균속도' : '소요시간'}
+            {workout.sport_type === 'running' ? t.log.pace : workout.sport_type === 'cycling' ? t.log.avgSpeed : t.log.duration}
           </Text>
         </View>
       </View>

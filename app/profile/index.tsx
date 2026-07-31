@@ -9,8 +9,9 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useProfileStore } from '../../src/stores/profileStore';
 import { Button } from '../../src/components/common/Button';
 import { colors } from '../../src/utils/theme';
-import { t, fitnessLevelLabels, raceTypeLabels } from '../../src/i18n/ko';
-import { type FitnessLevel, type Gender, type RaceType } from '../../src/types';
+import { DatePicker } from '../../src/components/common/DatePicker';
+import { t, fitnessLevelLabels } from '../../src/i18n/ko';
+import { type FitnessLevel, type Gender } from '../../src/types';
 
 const FITNESS_LEVELS: Array<{ value: FitnessLevel; label: string }> = [
   { value: 'beginner', label: fitnessLevelLabels.beginner },
@@ -25,13 +26,6 @@ const GENDERS: Array<{ value: Gender; label: string }> = [
   { value: 'other', label: t.gender.other },
 ];
 
-const RACE_TYPES: Array<{ value: RaceType; label: string }> = [
-  { value: 'sprint', label: raceTypeLabels.sprint },
-  { value: 'olympic', label: raceTypeLabels.olympic },
-  { value: 'half_ironman', label: raceTypeLabels.half_ironman },
-  { value: 'full_ironman', label: raceTypeLabels.full_ironman },
-];
-
 export default function ProfileScreen() {
   const db = useSQLiteContext();
   const { profile, loadProfile, saveProfile } = useProfileStore();
@@ -43,8 +37,6 @@ export default function ProfileScreen() {
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
   const [fitnessLevel, setFitnessLevel] = useState<FitnessLevel>('beginner');
-  const [primaryGoal, setPrimaryGoal] = useState<RaceType>('olympic');
-  const [targetRaceDate, setTargetRaceDate] = useState('');
   const [weeklyHours, setWeeklyHours] = useState('');
   const [restingHr, setRestingHr] = useState('');
   const [maxHr, setMaxHr] = useState('');
@@ -61,8 +53,6 @@ export default function ProfileScreen() {
       setHeightCm(profile.height_cm != null ? String(profile.height_cm) : '');
       setWeightKg(profile.weight_kg != null ? String(profile.weight_kg) : '');
       setFitnessLevel((profile.fitness_level as FitnessLevel) ?? 'beginner');
-      setPrimaryGoal((profile.primary_goal as RaceType) ?? 'olympic');
-      setTargetRaceDate(profile.target_race_date ?? '');
       setWeeklyHours(profile.weekly_hours != null ? String(profile.weekly_hours) : '');
       setRestingHr(profile.resting_hr != null ? String(profile.resting_hr) : '');
       setMaxHr(profile.max_hr != null ? String(profile.max_hr) : '');
@@ -80,8 +70,6 @@ export default function ProfileScreen() {
         height_cm: heightCm ? parseFloat(heightCm) : undefined,
         weight_kg: weightKg ? parseFloat(weightKg) : undefined,
         fitness_level: fitnessLevel,
-        primary_goal: primaryGoal,
-        target_race_date: targetRaceDate || undefined,
         weekly_hours: weeklyHours ? parseFloat(weeklyHours) : 5,
         resting_hr: restingHr ? parseInt(restingHr) : undefined,
         max_hr: maxHr ? parseInt(maxHr) : undefined,
@@ -111,7 +99,7 @@ export default function ProfileScreen() {
           </Field>
 
           <Field label={t.onboarding.birthDate}>
-            <TextInput style={styles.input} value={birthDate} onChangeText={setBirthDate} placeholder={t.profile.birthDateFormat} placeholderTextColor={colors.textMuted} />
+            <DatePicker value={birthDate} onChange={setBirthDate} clearable />
           </Field>
 
           <Field label={t.onboarding.gender}>
@@ -153,23 +141,6 @@ export default function ProfileScreen() {
             </View>
           </Field>
 
-          <Field label={t.profile.goalRace}>
-            <View style={styles.chips}>
-              {RACE_TYPES.map((r) => (
-                <TouchableOpacity
-                  key={r.value}
-                  style={[styles.chip, primaryGoal === r.value && styles.chipActive]}
-                  onPress={() => setPrimaryGoal(r.value)}
-                >
-                  <Text style={[styles.chipText, primaryGoal === r.value && styles.chipTextActive]}>{r.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </Field>
-
-          <Field label={t.profile.raceDate}>
-            <TextInput style={styles.input} value={targetRaceDate} onChangeText={setTargetRaceDate} placeholder={t.profile.birthDateFormat} placeholderTextColor={colors.textMuted} />
-          </Field>
 
           <Field label={t.onboarding.weeklyHours}>
             <TextInput style={styles.input} value={weeklyHours} onChangeText={setWeeklyHours} keyboardType="decimal-pad" placeholder="5" placeholderTextColor={colors.textMuted} />

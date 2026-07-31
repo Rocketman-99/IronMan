@@ -1,62 +1,60 @@
 import { t } from '../i18n/ko';
 
+/**
+ * 화면에서 고르는 선택지 목록.
+ *
+ * 글자는 전부 `src/i18n/ko.ts` 에서 가져온다 — 문구를 고칠 때 한 파일만 보면 되도록.
+ * 여기 남는 건 값(DB에 저장되는 코드)과 숫자뿐이다.
+ *
+ * 레이스 종류는 여기 없다. 마라톤까지 포함한 9종이 `src/utils/races.ts` 에 있다.
+ */
+
 export const HR_ZONES = [
-  { zone: 1, label: '회복', min: 0.5, max: 0.6, color: '#3498DB' },
-  { zone: 2, label: '기초 유산소', min: 0.6, max: 0.7, color: '#2ECC71' },
-  { zone: 3, label: '유산소', min: 0.7, max: 0.8, color: '#F39C12' },
+  { zone: 1, label: t.hrZone[1], min: 0.5, max: 0.6, color: '#3498DB' },
+  { zone: 2, label: t.hrZone[2], min: 0.6, max: 0.7, color: '#2ECC71' },
+  { zone: 3, label: t.hrZone[3], min: 0.7, max: 0.8, color: '#F39C12' },
   { zone: 4, label: t.hrZone[4], min: 0.8, max: 0.9, color: '#E67E22' },
-  { zone: 5, label: '최대 강도', min: 0.9, max: 1.0, color: '#E74C3C' },
+  { zone: 5, label: t.hrZone[5], min: 0.9, max: 1.0, color: '#E74C3C' },
 ] as const;
 
 export const SURFACES = [
-  { value: 'road', label: '도로' },
-  { value: 'trail', label: '트레일' },
-  { value: 'track', label: '트랙' },
-  { value: 'treadmill', label: '트레드밀' },
+  { value: 'road', label: t.surface.road },
+  { value: 'trail', label: t.surface.trail },
+  { value: 'track', label: t.surface.track },
+  { value: 'treadmill', label: t.surface.treadmill },
 ] as const;
 
 export const STROKE_TYPES = [
-  { value: 'freestyle', label: '자유형' },
-  { value: 'backstroke', label: '배영' },
-  { value: 'breaststroke', label: '평영' },
-  { value: 'butterfly', label: '접영' },
-  { value: 'mixed', label: '혼합' },
+  { value: 'freestyle', label: t.stroke.freestyle },
+  { value: 'backstroke', label: t.stroke.backstroke },
+  { value: 'breaststroke', label: t.stroke.breaststroke },
+  { value: 'butterfly', label: t.stroke.butterfly },
+  { value: 'mixed', label: t.stroke.mixed },
 ] as const;
 
 export const BIKE_TYPES = [
-  { value: 'road', label: '로드' },
-  { value: 'tt', label: '타임트라이얼' },
-  { value: 'mountain', label: '산악' },
-  { value: 'trainer', label: '실내 트레이너' },
+  { value: 'road', label: t.bike.road },
+  { value: 'tt', label: t.bike.tt },
+  { value: 'mountain', label: t.bike.mountain },
+  { value: 'trainer', label: t.bike.trainer },
 ] as const;
 
 export const FITNESS_LEVELS = [
-  {
-    value: 'beginner',
-    label: '입문',
-    description: '트라이애슬론을 처음 시작하거나 규칙적 운동을 시작한 단계',
-  },
-  {
-    value: 'intermediate',
-    label: '중급',
-    description: '6개월 이상 규칙적으로 훈련, 완주 경험 있음',
-  },
-  {
-    value: 'advanced',
-    label: '고급',
-    description: '2년 이상 체계적 훈련, 다수 대회 완주',
-  },
-  {
-    value: 'elite',
-    label: '엘리트',
-    description: '고성능 목표, 입상 경험',
-  },
+  { value: 'beginner', label: t.fitnessLevel.beginner, description: t.fitnessLevelDesc.beginner },
+  { value: 'intermediate', label: t.fitnessLevel.intermediate, description: t.fitnessLevelDesc.intermediate },
+  { value: 'advanced', label: t.fitnessLevel.advanced, description: t.fitnessLevelDesc.advanced },
+  { value: 'elite', label: t.fitnessLevel.elite, description: t.fitnessLevelDesc.elite },
 ] as const;
 
-export const RACE_TYPES = [
-  { value: 'sprint', label: '스프린트', detail: '수영 750m / 사이클 20km / 러닝 5km' },
-  { value: 'olympic', label: '올림픽', detail: '수영 1.5km / 사이클 40km / 러닝 10km' },
-  { value: 'half_ironman', label: '하프 아이언맨', detail: '수영 1.9km / 사이클 90km / 러닝 21km' },
-  { value: 'full_ironman', label: '풀 아이언맨', detail: '수영 3.8km / 사이클 180km / 러닝 42km' },
-] as const;
+/** 저장된 코드값을 화면 문구로. 없는 값이면 코드값을 그대로 보여준다. */
+export function surfaceLabel(value: string): string {
+  return (t.surface as Record<string, string>)[value] ?? value;
+}
 
+export function strokeLabel(value: string): string {
+  return (t.stroke as Record<string, string>)[value] ?? value;
+}
+
+export function bikeTypeLabel(value: string): string {
+  return (t.bike as Record<string, string>)[value] ?? value;
+}

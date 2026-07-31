@@ -7,13 +7,15 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../src/utils/theme';
 import { useAIStore } from '../../src/stores/aiStore';
+import { ConsiderationList, GeneratingIndicator, ContextSummary } from '../../src/components/ai/AIProgress';
+import { INJURY_CONSIDERATIONS } from '../../src/services/ai/considerations';
 import { useProfileStore } from '../../src/stores/profileStore';
 import { useAppStore } from '../../src/stores/appStore';
 
 export default function InjuryRisk() {
   const router = useRouter();
   const db = useSQLiteContext();
-  const { injuryAssessment, fetchInjuryRisk, isLoading } = useAIStore();
+  const { injuryAssessment, fetchInjuryRisk, isLoading, progressChars, startedAt, lastContext } = useAIStore();
   const { profile } = useProfileStore();
   const { hasApiKey, checkAndIncrementAIUsage } = useAppStore();
 
@@ -58,9 +60,14 @@ export default function InjuryRisk() {
       )}
 
       {!risk && hasApiKey && (
-        <TouchableOpacity style={styles.assessBtn} onPress={handleAssess} disabled={isLoading}>
-          {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.assessBtnText}>{t.dashboard.injuryRiskDesc}</Text>}
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity style={styles.assessBtn} onPress={handleAssess} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.assessBtnText}>{t.dashboard.injuryRiskDesc}</Text>}
+          </TouchableOpacity>
+          {isLoading
+            ? <GeneratingIndicator startedAt={startedAt} progressChars={progressChars} />
+            : <ConsiderationList items={INJURY_CONSIDERATIONS} />}
+        </>
       )}
 
       {risk && (
@@ -81,6 +88,8 @@ export default function InjuryRisk() {
               ))}
             </View>
           )}
+          <ContextSummary context={lastContext} />
+          {isLoading && <GeneratingIndicator startedAt={startedAt} progressChars={progressChars} />}
           <TouchableOpacity style={styles.retryBtn} onPress={handleAssess} disabled={isLoading}>
             {isLoading ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.retryBtnText}>{t.ai.injuryRetry}</Text>}
           </TouchableOpacity>

@@ -152,9 +152,11 @@ const styles = StyleSheet.create({
   setupText: { flex: 1, color: colors.textSecondary, fontSize: 13 },
   logBtn: { backgroundColor: colors.primary, borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 },
   logBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  aiRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  aiCard: { flex: 1, backgroundColor: colors.card, borderRadius: 12, padding: 14, alignItems: 'center', gap: 6, borderWidth: 1, borderColor: colors.cardBorder },
-  aiCardText: { color: colors.textSecondary, fontSize: 11, fontWeight: '600' },
+  // 한 줄에 4개를 욱여넣으면 글자가 11pt까지 줄어 읽기 어렵다. 2×2 로 눕히면
+  // 카드가 넓어지고, 최근 운동이 첫 화면 안으로 들어온다.
+  aiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  aiCard: { width: '48%', flexDirection: 'row', backgroundColor: colors.card, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 12, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: colors.cardBorder },
+  aiCardText: { flex: 1, color: colors.text, fontSize: 13, fontWeight: '600' },
   empty: { alignItems: 'center', paddingVertical: 32 },
   emptyText: { color: colors.textSecondary, fontSize: 16 },
   emptySubText: { color: colors.textMuted, fontSize: 13, marginTop: 6 },

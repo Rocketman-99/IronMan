@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AI_MODEL_NAMES } from '../../src/config/api';
+import { AI_MODEL_NAMES, AI_LIMITS } from '../../src/config/api';
 import { t } from '../../src/i18n/ko';
 import {
   View,
@@ -71,7 +71,7 @@ export default function SettingsScreen() {
     ]);
   }
 
-  const dailyBudgetPercent = Math.min(100, Math.round((aiCallsToday / 15) * 100));
+  const dailyBudgetPercent = Math.min(100, Math.round((aiCallsToday / AI_LIMITS.dailyBudget) * 100));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -100,7 +100,9 @@ export default function SettingsScreen() {
               <View style={styles.usageWrap}>
                 <View style={styles.usageHeader}>
                   <Text style={styles.usageLabel}>{t.settings.usageToday}</Text>
-                  <Text style={styles.usageValue}>{aiCallsToday.toFixed(1)} / 15 포인트</Text>
+                  <Text style={styles.usageValue}>
+                    {aiCallsToday.toFixed(1)} / {AI_LIMITS.dailyBudget} {t.settings.usageUnit}
+                  </Text>
                 </View>
                 <View style={styles.usageBg}>
                   <View style={[styles.usageFill, {
@@ -119,10 +121,7 @@ export default function SettingsScreen() {
             </View>
           ) : (
             <View>
-              <Text style={styles.apiGuide}>
-                Anthropic Console에서 발급받은 API 키를 입력하세요.{'\n'}
-                키는 기기에 안전하게 암호화 저장됩니다.
-              </Text>
+              <Text style={styles.apiGuide}>{t.settings.apiKeyGuide}</Text>
               <View style={styles.inputWrap}>
                 <TextInput
                   style={styles.keyInput}
@@ -151,7 +150,9 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
           <View style={styles.budgetNote}>
             <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.budgetNoteText}>{t.settings.dailyLimitNote}</Text>
+            <Text style={styles.budgetNoteText}>
+              {t.settings.dailyLimitNote.replace('{n}', String(AI_LIMITS.dailyBudget))}
+            </Text>
           </View>
         </Card>
 

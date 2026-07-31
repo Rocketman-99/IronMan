@@ -1,23 +1,29 @@
-import { type UserProfile, type TrainingPlan, type WorkoutWithDetails } from '../../types';
+import { type UserProfile, type TrainingPlan } from '../../types';
 import { getAIClient } from './client';
 import { AI_MODELS } from '../../config/api';
-import { profileSummary, workoutSummary } from './prompts';
+import { t } from '../../i18n/ko';
+import { type TrainingContext } from './context';
+
+/** 스트리밍 중 받은 글자 수를 흘려보낸다. 화면의 진행 표시가 이걸 쓴다. */
+export type ProgressFn = (charsReceived: number) => void;
 
 export async function generateTrainingPlan(
   profile: UserProfile,
-  recentWorkouts: WorkoutWithDetails[]
+  context: TrainingContext,
+  onProgress?: ProgressFn
 ): Promise<TrainingPlan> {
   const client = await getAIClient();
 
   const prompt = `당신은 전문 트라이애슬론 코치입니다.
 
-선수 프로필:
-${profileSummary(profile)}
+${context.prompt}
 
-최근 운동 요약:
-${recentWorkouts.slice(0, 14).map(workoutSummary).join('\n')}
+위 데이터를 종합해 4주 트레이닝 계획을 세우세요. 특히:
+- 설정한 목표(특히 레이스 종류와 남은 기간)에 맞춰 주차별 초점을 정하세요.
+- 최근 훈련량 추이와 ACWR을 보고 무리하지 않게 증량하세요.
+- 종목 균형이 무너져 있으면 부족한 종목을 보완하세요.
+- 주간 훈련 가능 시간 안에서 실행 가능한 계획을 세우세요.
 
-위 데이터를 바탕으로 4주간 트레이닝 계획을 생성하세요.
 엄격하게 아래 JSON 형식만 출력하세요 (markdown 문법 없이):
 {
   "title": "계획 제목",
@@ -33,25 +39,36 @@ ${recentWorkouts.slice(0, 14).map(workoutSummary).join('\n')}
   ]
 }`;
 
-  const response = await client.messages.create({
+  // 8000 토큰짜리 응답은 스트리밍이 권장 방식이고, 진행 표시의 근거도 된다.
+  const stream = client.messages.stream({
     model: AI_MODELS.deep,
-    // 4주 × 주별 세션까지 담으려면 2048로는 중간에 잘린다.
     max_tokens: 8000,
-    // 계획을 세우기 전에 실제로 생각하게 한다 — 이게 얕은 계획의 주된 원인이었다.
     thinking: { type: 'adaptive' },
     output_config: { effort: 'high' },
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : '{}';
+  if (onProgress) {
+    let chars = 0;
+    stream.on('text', (delta: string) => {
+      chars += delta.length;
+      onProgress(chars);
+    });
+  }
+
+  const response = await stream.finalMessage();
+  const text = response.content.find((b) => b.type === 'text');
+  const raw = text && text.type === 'text' ? text.text : '{}';
 
   try {
-    const match = text.match(/\{[\s\S]*\}/);
+    const match = raw.match(/\{[\s\S]*\}/);
     if (match) return JSON.parse(match[0]) as TrainingPlan;
-  } catch {}
+  } catch {
+    // 파싱 실패 시 아래 기본 계획으로 떨어진다
+  }
 
   return {
-    title: '4주 기초 트레이닝 계획',
+    title: t.aiPrompt.planFallbackTitle,
     totalWeeks: 4,
     weeks: [
       { weekNumber: 1, focus: '기초 체력 구축', sessions: [{ day: '화요일', sport: 'running', type: 'easy', duration: '30분', description: '가벼운 러닝' }] },

@@ -5,6 +5,7 @@ import {
   getAllGoals,
   createGoal,
   deleteGoal,
+  completeGoal,
   syncGoalProgress,
 } from '../db/queries/goals';
 
@@ -15,6 +16,8 @@ interface GoalsState {
   createGoal: (db: SQLiteDatabase, goal: NewGoal) => Promise<void>;
   deleteGoal: (db: SQLiteDatabase, id: number) => Promise<void>;
   syncProgress: (db: SQLiteDatabase) => Promise<void>;
+  /** 레이스 목표를 완주 처리한다 (자동 판정이 불가능한 유형). */
+  markComplete: (db: SQLiteDatabase, id: number) => Promise<void>;
   progressPercent: (goal: Goal) => number;
 }
 
@@ -36,6 +39,12 @@ export const useGoalsStore = create<GoalsState>((set) => ({
 
   deleteGoal: async (db, id) => {
     await deleteGoal(db, id);
+    const goals = await getAllGoals(db);
+    set({ goals });
+  },
+
+  markComplete: async (db, id) => {
+    await completeGoal(db, id);
     const goals = await getAllGoals(db);
     set({ goals });
   },

@@ -15,7 +15,7 @@ const SPORTS: Array<{
   emoji: string;
 }> = [
   { type: 'running', icon: 'fitness-outline', emoji: '🏃' },
-  { type: 'swimming', icon: 'water-outline', emoji: '🂠' },
+  { type: 'swimming', icon: 'water-outline', emoji: '🏊' },
   { type: 'cycling', icon: 'bicycle-outline', emoji: '🚴' },
 ];
 

@@ -6,13 +6,15 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../src/utils/theme';
 import { useAIStore } from '../../src/stores/aiStore';
+import { ConsiderationList, GeneratingIndicator, ContextSummary } from '../../src/components/ai/AIProgress';
+import { PLAN_CONSIDERATIONS } from '../../src/services/ai/considerations';
 import { useProfileStore } from '../../src/stores/profileStore';
 import { useAppStore } from '../../src/stores/appStore';
 
 export default function TrainingPlan() {
   const router = useRouter();
   const db = useSQLiteContext();
-  const { trainingPlan, generatePlan, isLoading } = useAIStore();
+  const { trainingPlan, generatePlan, isLoading, progressChars, startedAt, lastContext } = useAIStore();
   const { profile } = useProfileStore();
   const { hasApiKey, checkAndIncrementAIUsage } = useAppStore();
   const [expanded, setExpanded] = useState<number | null>(null);
@@ -33,15 +35,19 @@ export default function TrainingPlan() {
         <View style={styles.empty}>
           <Ionicons name="calendar-outline" size={56} color={colors.textMuted} />
           <Text style={styles.emptyTitle}>{t.ai.planEmpty}</Text>
-          <Text style={styles.emptyText}>프로필과 최근 운동 데이터를 분석하여{"\n"}4주 훈련 계획을 생성합니다</Text>
+          <Text style={styles.emptyText}>{t.aiContext.willConsider}</Text>
+          <ConsiderationList items={PLAN_CONSIDERATIONS} />
           {!hasApiKey ? (
             <TouchableOpacity onPress={() => router.push('/settings')} style={styles.btn}>
               <Text style={styles.btnText}>{t.dashboard.setupApiKeyBtn}</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.btn} onPress={handleGenerate} disabled={isLoading}>
-              {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>{t.ai.planGenerate}</Text>}
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity style={styles.btn} onPress={handleGenerate} disabled={isLoading}>
+                {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>{t.ai.planGenerate}</Text>}
+              </TouchableOpacity>
+              {isLoading && <GeneratingIndicator startedAt={startedAt} progressChars={progressChars} />}
+            </>
           )}
         </View>
       ) : (
@@ -50,7 +56,7 @@ export default function TrainingPlan() {
           {trainingPlan.weeks?.map((week, idx) => (
             <TouchableOpacity key={idx} style={styles.weekCard} onPress={() => setExpanded(expanded === idx ? null : idx)}>
               <View style={styles.weekHeader}>
-                <Text style={styles.weekTitle}>{week.weekNumber}주차</Text>
+                <Text style={styles.weekTitle}>{t.ai.weekLabel.replace('{n}', String(week.weekNumber))}</Text>
                 <Ionicons name={expanded === idx ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
               </View>
               <Text style={styles.weekFocus}>{week.focus}</Text>
@@ -62,6 +68,8 @@ export default function TrainingPlan() {
               ))}
             </TouchableOpacity>
           ))}
+          <ContextSummary context={lastContext} />
+          {isLoading && <GeneratingIndicator startedAt={startedAt} progressChars={progressChars} />}
           <TouchableOpacity style={styles.retryBtn} onPress={handleGenerate} disabled={isLoading}>
             {isLoading ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.retryBtnText}>{t.ai.planRegenerate}</Text>}
           </TouchableOpacity>

@@ -1,11 +1,19 @@
 import { useEffect, useState, useCallback } from 'react';
 import { t } from '../../../src/i18n/ko';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { Ionicons } from '@expo/vector-icons';
 import { BarChart, LineChart } from 'react-native-gifted-charts';
 import { colors, sportColors } from '../../../src/utils/theme';
+import { sportLabels } from '../../../src/i18n/ko';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
-import { formatDistanceKm } from '../../../src/utils/formatters';
+import {
+  formatWorkoutDate,
+  formatDistanceKm,
+  formatDuration,
+} from '../../../src/utils/formatters';
+import { type WorkoutWithDetails } from '../../../src/types';
 
 const SCREEN_W = Dimensions.get('window').width;
 const CHART_W = SCREEN_W - 48;
@@ -14,11 +22,17 @@ type Tab = 'volume' | 'pace' | 'hr';
 
 export default function Progress() {
   const db = useSQLiteContext();
+  const router = useRouter();
   const { recentWorkouts, refreshAll, isLoading } = useWorkoutStore();
   const [tab, setTab] = useState<Tab>('volume');
+  /** 그래프에서 선택한 점에 대응하는 운동. 아래 카드로 보여준다. */
+  const [selected, setSelected] = useState<WorkoutWithDetails | null>(null);
 
   const load = useCallback(() => refreshAll(db), [db]);
   useEffect(() => { load(); }, []);
+
+  // 탭을 바꾸면 이전 탭에서 고른 점은 의미가 없다.
+  useEffect(() => { setSelected(null); }, [tab]);
 
   const TABS: { value: Tab; label: string }[] = [
     { value: 'volume', label: t.progress.volume },
@@ -26,20 +40,30 @@ export default function Progress() {
     { value: 'hr', label: t.log.heartRate },
   ];
 
-  const runWorkouts = recentWorkouts.filter(w => w.sport_type === 'running').slice(0, 10).reverse();
-
-  const volumeData = recentWorkouts.slice(0, 7).reverse().map(w => ({
+  // 각 계열은 차트에 넘길 데이터와, 인덱스로 되짚을 원본 운동을 나란히 들고 있는다.
+  const volumeSource = recentWorkouts.slice(0, 7).reverse();
+  const volumeData = volumeSource.map(w => ({
     value: Math.round(w.distance_m / 100) / 10,
     frontColor: sportColors[w.sport_type as keyof typeof sportColors],
     label: w.workout_date.slice(5, 10),
   }));
 
-  const paceData = runWorkouts
-    .filter(w => w.running?.avg_pace_sec_km)
-    .map(w => ({ value: Number((w.running!.avg_pace_sec_km! / 60).toFixed(2)), dataPointText: '', label: w.workout_date.slice(5, 10) }));
+  const paceSource = recentWorkouts
+    .filter(w => w.sport_type === 'running' && w.running?.avg_pace_sec_km)
+    .slice(0, 10)
+    .reverse();
+  const paceData = paceSource.map(w => ({
+    value: Number((w.running!.avg_pace_sec_km! / 60).toFixed(2)),
+    dataPointText: '',
+    label: w.workout_date.slice(5, 10),
+  }));
 
-  const hrData = recentWorkouts.filter(w => w.avg_hr).slice(0, 10).reverse()
-    .map(w => ({ value: w.avg_hr!, dataPointText: '', label: w.workout_date.slice(5, 10) }));
+  const hrSource = recentWorkouts.filter(w => w.avg_hr).slice(0, 10).reverse();
+  const hrData = hrSource.map(w => ({
+    value: w.avg_hr!,
+    dataPointText: '',
+    label: w.workout_date.slice(5, 10),
+  }));
 
   return (
     <ScrollView
@@ -50,9 +74,9 @@ export default function Progress() {
       <Text style={styles.title}>{t.progress.title}</Text>
 
       <View style={styles.tabRow}>
-        {TABS.map(t => (
-          <TouchableOpacity key={t.value} style={[styles.tab, tab === t.value && styles.tabActive]} onPress={() => setTab(t.value)}>
-            <Text style={[styles.tabText, tab === t.value && styles.tabTextActive]}>{t.label}</Text>
+        {TABS.map(item => (
+          <TouchableOpacity key={item.value} style={[styles.tab, tab === item.value && styles.tabActive]} onPress={() => setTab(item.value)}>
+            <Text style={[styles.tabText, tab === item.value && styles.tabTextActive]}>{item.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -74,6 +98,7 @@ export default function Progress() {
               yAxisColor={colors.divider}
               xAxisColor={colors.divider}
               hideRules
+              onPress={(_item: unknown, index: number) => setSelected(volumeSource[index] ?? null)}
             />
           ) : <Text style={styles.noData}>{t.common.noData}</Text>}
         </View>
@@ -100,6 +125,8 @@ export default function Progress() {
               yAxisColor={colors.divider}
               xAxisColor={colors.divider}
               hideRules
+              focusEnabled
+              onFocus={(_item: unknown, index: number) => setSelected(paceSource[index] ?? null)}
             />
           ) : <Text style={styles.noData}>{t.progress.needRunning}</Text>}
         </View>
@@ -126,9 +153,36 @@ export default function Progress() {
               yAxisColor={colors.divider}
               xAxisColor={colors.divider}
               hideRules
+              focusEnabled
+              onFocus={(_item: unknown, index: number) => setSelected(hrSource[index] ?? null)}
             />
           ) : <Text style={styles.noData}>{t.progress.needHr}</Text>}
         </View>
+      )}
+
+      {selected ? (
+        <TouchableOpacity
+          style={[styles.selectedCard, { borderLeftColor: sportColors[selected.sport_type as keyof typeof sportColors] }]}
+          onPress={() => router.push(`/workout/${selected.id}`)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.selectedTop}>
+            <Text style={[styles.selectedSport, { color: sportColors[selected.sport_type as keyof typeof sportColors] }]}>
+              {sportLabels[selected.sport_type as keyof typeof sportLabels]}
+            </Text>
+            <Text style={styles.selectedDate}>{formatWorkoutDate(selected.workout_date)}</Text>
+          </View>
+          <Text style={styles.selectedMetrics}>
+            {formatDistanceKm(selected.distance_m)} · {formatDuration(selected.duration_sec)}
+            {selected.avg_hr ? ` · ${selected.avg_hr} bpm` : ''}
+          </Text>
+          <View style={styles.selectedLink}>
+            <Text style={styles.selectedLinkText}>{t.progress.viewWorkout}</Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+          </View>
+        </TouchableOpacity>
+      ) : (
+        <Text style={styles.tapHint}>{t.progress.tapHint}</Text>
       )}
 
       <Text style={styles.sectionTitle}>{t.progress.sportBreakdown}</Text>
@@ -138,9 +192,9 @@ export default function Progress() {
         return (
           <View key={sport} style={[styles.sportRow, { borderLeftColor: sportColors[sport] }]}>
             <Text style={[styles.sportName, { color: sportColors[sport] }]}>
-              {sport === 'running' ? t.sport.running : sport === 'swimming' ? t.sport.swimming : t.sport.cycling}
+              {sportLabels[sport]}
             </Text>
-            <Text style={styles.sportCount}>{count}회</Text>
+            <Text style={styles.sportCount}>{count}{t.common.countUnit}</Text>
           </View>
         );
       })}
@@ -157,9 +211,17 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   tabText: { color: colors.textSecondary, fontWeight: '600', fontSize: 13 },
   tabTextActive: { color: '#fff' },
-  chartCard: { backgroundColor: colors.card, borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: colors.cardBorder },
+  chartCard: { backgroundColor: colors.card, borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: colors.cardBorder },
   chartTitle: { color: colors.textSecondary, fontSize: 13, fontWeight: '700', marginBottom: 12 },
   noData: { color: colors.textMuted, textAlign: 'center', paddingVertical: 32, fontSize: 14 },
+  tapHint: { color: colors.textMuted, fontSize: 12, textAlign: 'center', marginBottom: 16 },
+  selectedCard: { backgroundColor: colors.card, borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: colors.cardBorder, borderLeftWidth: 3 },
+  selectedTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  selectedSport: { fontWeight: '700', fontSize: 14 },
+  selectedDate: { color: colors.textSecondary, fontSize: 12 },
+  selectedMetrics: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  selectedLink: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 8 },
+  selectedLinkText: { color: colors.primary, fontSize: 13, fontWeight: '700' },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 10 },
   sportRow: { backgroundColor: colors.card, borderRadius: 10, padding: 12, marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderLeftWidth: 3, borderWidth: 1, borderColor: colors.cardBorder },
   sportName: { fontWeight: '700', fontSize: 14 },

@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { colors } from '../../src/utils/theme';
 import { useProfileStore } from '../../src/stores/profileStore';
+import { DatePicker } from '../../src/components/common/DatePicker';
 
 const GENDERS = [
   { value: 'male', label: t.gender.male },
@@ -58,8 +59,7 @@ export default function BodyMetrics() {
       </View>
 
       <Text style={styles.label}>{t.onboarding.birthDateLabel}</Text>
-      <TextInput style={styles.input} placeholder={t.onboarding.birthDateHint} placeholderTextColor={colors.textMuted}
-        value={birthDate} onChangeText={setBirthDate} keyboardType="numbers-and-punctuation" />
+      <DatePicker value={birthDate} onChange={setBirthDate} placeholder={t.onboarding.birthDateHint} clearable />
 
       <View style={styles.row}>
         <View style={styles.half}>

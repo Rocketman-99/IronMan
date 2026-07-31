@@ -95,6 +95,8 @@ CREATE TABLE IF NOT EXISTS goals (
   unit            TEXT NOT NULL,
   period          TEXT,
   target_date     TEXT,
+  race_type       TEXT,
+  race_date       TEXT,
   is_completed    INTEGER NOT NULL DEFAULT 0,
   completed_at    TEXT,
   created_at      TEXT NOT NULL

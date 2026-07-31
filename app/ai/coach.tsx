@@ -3,6 +3,7 @@ import { MarkdownText } from '../../src/components/common/MarkdownText';
 import { t } from '../../src/i18n/ko';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,6 +34,7 @@ function ChatBubble({ msg }: { msg: Message }) {
 export default function AICoach() {
   const router = useRouter();
   const db = useSQLiteContext();
+  const insets = useSafeAreaInsets();
   const { chatMessages, isStreaming, sendChat, clearChat } = useAIStore();
   const { profile } = useProfileStore();
   const { hasApiKey, checkAndIncrementAIUsage } = useAppStore();
@@ -90,7 +92,9 @@ export default function AICoach() {
 
       {isStreaming && <ActivityIndicator color={colors.gold} style={styles.loading} />}
 
-      <KeyboardStickyView style={styles.inputRow}>
+      {/* 입력창은 화면 하단에 고정돼 있어, edge-to-edge에서 시스템 내비게이션 바에
+          깔린다. 인셋만큼 아래 여백을 준다. */}
+      <KeyboardStickyView style={[styles.inputRow, { paddingBottom: 12 + insets.bottom }]}>
         <TextInput
           style={styles.input}
           placeholder={t.ai.coachPlaceholder}

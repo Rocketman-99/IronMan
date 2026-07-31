@@ -18,6 +18,7 @@ import { useProfileStore } from '../../../src/stores/profileStore';
 import { useAIStore } from '../../../src/stores/aiStore';
 import { useAppStore } from '../../../src/stores/appStore';
 import { FeelingSelector } from '../../../src/components/workout/FeelingSelector';
+import { DatePicker } from '../../../src/components/common/DatePicker';
 import { getTodayKST, calcPaceSecPerKm, formatPace, estimateCalories } from '../../../src/utils/formatters';
 import { SURFACES } from '../../../src/utils/constants';
 
@@ -72,7 +73,10 @@ export default function RunningLog() {
       if (hasApiKey && workoutId && checkAndIncrementAIUsage('fast')) {
         analyzeWorkoutAI(db, workoutId, profile);
       }
-      router.back();
+      // 저장하고 그냥 뒤로 가면 저장이 됐는지 알 수 없다. 방금 만든 기록을 열어
+      // AI 분석이 붙는 것까지 보이게 한다. replace 라서 뒤로가기는 기록 탭으로 간다.
+      if (workoutId) router.replace(`/workout/${workoutId}`);
+      else router.back();
     } catch (e) {
       Alert.alert(t.common.error, t.common.saveFailed);
     } finally {
@@ -95,7 +99,7 @@ export default function RunningLog() {
       )}
 
       <Text style={styles.label}>{t.log.date}</Text>
-      <TextInput style={styles.input} value={date} onChangeText={setDate} placeholderTextColor={colors.textMuted} />
+      <DatePicker value={date} onChange={setDate} />
 
       <Text style={styles.label}>{t.log.distanceKm}</Text>
       <TextInput style={styles.input} placeholder="10.5" placeholderTextColor={colors.textMuted}

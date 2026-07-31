@@ -6,18 +6,18 @@ import {
   formatWorkoutDate,
   calcAge,
 } from '../../utils/formatters';
-import { t, sportLabels, fitnessLevelLabels, raceTypeLabels } from '../../i18n/ko';
+import { t, sportLabels, fitnessLevelLabels } from '../../i18n/ko';
+import { formatDday } from '../../utils/races';
 
 export function profileSummary(profile: UserProfile): string {
   const age = profile.birth_date ? `${calcAge(profile.birth_date)}세` : '나이 미기입';
   const gender = profile.gender === 'male' ? '남성' : profile.gender === 'female' ? '여성' : '미기입';
   const fitness = fitnessLevelLabels[profile.fitness_level] ?? profile.fitness_level;
-  const race = profile.primary_goal ? raceTypeLabels[profile.primary_goal] : '미설정';
   const bmi =
     profile.height_cm && profile.weight_kg
       ? `, BMI ${(profile.weight_kg / (profile.height_cm / 100) ** 2).toFixed(1)}`
       : '';
-  return `이름: ${profile.name}, ${age} ${gender}, 키 ${profile.height_cm ?? '?'}cm / 몸무게 ${profile.weight_kg ?? '?'}kg${bmi}, 피트니스 레벨: ${fitness}, 목표 레이스: ${race}`;
+  return `이름: ${profile.name}, ${age} ${gender}, 키 ${profile.height_cm ?? '?'}cm / 몸무게 ${profile.weight_kg ?? '?'}kg${bmi}, 피트니스 레벨: ${fitness}, 주간 훈련 가능 시간: ${profile.weekly_hours}시간`;
 }
 
 export function workoutSummary(w: WorkoutWithDetails): string {
@@ -188,9 +188,19 @@ export function buildInjuryRiskPrompt(
 }
 
 export function buildGoalsContext(goals: Goal[]): string {
-  if (goals.length === 0) return '설정된 목표 없음';
-  return goals
-    .filter((g) => !g.is_completed)
-    .map((g) => `- ${g.title}: ${g.current_value}/${g.target_value}${g.unit}`)
+  const active = goals.filter((g) => !g.is_completed);
+  if (active.length === 0) return '설정된 목표 없음';
+
+  return active
+    .map((g) => {
+      if (g.goal_type === 'race') {
+        const kind = g.race_type ? t.raceTypeShort[g.race_type] : g.title;
+        const detail = g.race_type ? ` (${t.raceTypeDetail[g.race_type]})` : '';
+        const when = g.race_date ? ` — ${g.race_date} ${formatDday(g.race_date) ?? ''}` : '';
+        return `- [목표 레이스] ${kind}${detail}${when}`;
+      }
+      const period = g.period ? `${t.goalPeriod[g.period]} ` : '';
+      return `- [${period}목표] ${g.title}: ${g.current_value}/${g.target_value}${g.unit}`;
+    })
     .join('\n');
 }

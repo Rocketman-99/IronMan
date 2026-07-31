@@ -1,6 +1,16 @@
 export type FitnessLevel = 'beginner' | 'intermediate' | 'advanced' | 'elite';
 export type Gender = 'male' | 'female' | 'other';
-export type RaceType = 'sprint' | 'olympic' | 'half_ironman' | 'full_ironman';
+/** 트라이애슬론 4종 + 마라톤 5종. 목표 탭에서 여러 개 선택할 수 있다. */
+export type RaceType =
+  | 'sprint'
+  | 'olympic'
+  | 'half_ironman'
+  | 'full_ironman'
+  | 'marathon_5k'
+  | 'marathon_10k'
+  | 'half_marathon'
+  | 'full_marathon'
+  | 'ultra';
 
 export interface UserProfile {
   id: number;

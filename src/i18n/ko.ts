@@ -40,6 +40,8 @@ export const t = {
     noData: '데이터가 없습니다',
     minute: '분',
     second: '초',
+    /** 횟수 단위. 목표의 기본 단위이자 "3회" 같은 표시에 쓴다. */
+    countUnit: '회',
   },
 
   /* ── 종목 · 레벨 · 컨디션 라벨 ────────────────────────── */
@@ -71,12 +73,26 @@ export const t = {
     olympic: '올림픽',
     half_ironman: '하프 아이언맨',
     full_ironman: '풀 아이언맨',
+    marathon_5k: '5km',
+    marathon_10k: '10km',
+    half_marathon: '하프 마라톤',
+    full_marathon: '풀 마라톤',
+    ultra: '울트라 마라톤',
   },
   raceTypeDetail: {
     sprint: '수영 750m / 사이클 20km / 러닝 5km',
     olympic: '수영 1.5km / 사이클 40km / 러닝 10km',
     half_ironman: '수영 1.9km / 사이클 90km / 러닝 21km',
     full_ironman: '수영 3.8km / 사이클 180km / 러닝 42km',
+    marathon_5k: '러닝 5km',
+    marathon_10k: '러닝 10km',
+    half_marathon: '러닝 21.1km',
+    full_marathon: '러닝 42.195km',
+    ultra: '러닝 42.195km 초과',
+  },
+  raceCategory: {
+    triathlon: '트라이애슬론',
+    marathon: '마라톤',
   },
   /** 1(가장 힘듦) ~ 5(최고). 운동 기록·상세 양쪽에서 같은 값을 쓴다. */
   feeling: {
@@ -190,6 +206,8 @@ export const t = {
     surface: '노면',
     bikeType: '바이크 종류',
     poolLength: '수영장 길이',
+    /** {m}: 수영장 길이(m) */
+    lapCount: '랩 수 (1랩 = {m}m)',
     swimDistance: '수영 거리',
     strokeType: '영법',
     condition: '컨디션',
@@ -222,6 +240,7 @@ export const t = {
     title: '운동 기록',
     empty: '운동 기록이 없어요',
     emptyHint: '첫 번째 훈련을 기록해보세요!',
+    filterAll: '전체',
   },
   workoutDetail: {
     notFound: '운동을 찾을 수 없어요',
@@ -232,6 +251,16 @@ export const t = {
     aiTitle: 'AI 코치 분석',
     highlights: '하이라이트',
     improvements: '개선 포인트',
+    avgHr: '평균 심박수',
+    calories: '칼로리',
+    cadence: '케이던스',
+    elevation: '등반 고도',
+    surface: '노면',
+    pool: '수영장',
+    laps: '랩 수',
+    stroke: '영법',
+    avgPower: '평균 파워',
+    bikeType: '자전거 종류',
     runningDetail: '러닝 세부 정보',
     swimmingDetail: '수영 세부 정보',
     cyclingDetail: '사이클 세부 정보',
@@ -247,6 +276,8 @@ export const t = {
     sportBreakdown: '종목별 운동 수',
     needRunning: '러닝 기록이 부족합니다',
     needHr: '심박수 데이터가 부족합니다',
+    tapHint: '그래프의 점을 누르면 해당 운동을 볼 수 있어요',
+    viewWorkout: '이 운동 자세히 보기',
   },
 
   /* ── 목표 ────────────────────────────────────────────── */
@@ -265,6 +296,42 @@ export const t = {
     targetDate: '목표 날짜 (선택)',
     submit: '목표 저장',
     needTitleValue: '제목과 목표치를 입력하세요',
+    raceKind: '레이스 종류',
+    raceDate: '레이스 날짜',
+    needRaceType: '레이스 종류를 선택하세요',
+    dday: 'D-{n}',
+    ddayToday: '오늘!',
+    ddayPast: '종료',
+    markDone: '완주 표시',
+    completedOn: '{date} 달성',
+    completedBadge: '달성',
+    sectionActive: '진행 중',
+    sectionDone: '달성한 목표',
+  },
+  goalTypeRace: '레이스',
+  datePicker: {
+    today: '오늘',
+    clear: '지우기',
+    /** {y}: 연도, {m}: 월 */
+    yearMonth: '{y}년 {m}월',
+  },
+
+  /* ── AI 가 무엇을 보고 판단하는지 ─────────────────────── */
+  aiContext: {
+    title: '고려한 정보',
+    willConsider: '이런 정보를 보고 만듭니다',
+    workouts: '운동 기록',
+    goals: '설정한 목표',
+    trend: '훈련량 추이 (최근 주 → 4주 전)',
+    acwr: '급성:만성 부하비율',
+    condition: '평균 컨디션',
+    profile: '프로필',
+    generating: '생성 중...',
+    elapsed: '{sec}초 경과',
+    estimate: '보통 30~60초 걸립니다',
+    received: '{n}자 작성됨',
+    stageThinking: '데이터를 살펴보는 중',
+    stageWriting: '작성하는 중',
   },
   goalType: {
     distance: '거리',
@@ -273,9 +340,9 @@ export const t = {
     pace: '페이스',
   },
   goalPeriod: {
+    once: '1회',
     weekly: '주간',
     monthly: '월간',
-    total: '누적',
   },
 
   /* ── AI 화면 ─────────────────────────────────────────── */
@@ -305,6 +372,8 @@ export const t = {
     recommendations: '권장 사항',
 
     planTitle: '훈련 계획',
+    /** {n}: 주차 번호 */
+    weekLabel: '{n}주차',
     planEmpty: 'AI 맞춤 훈련 계획',
     planGenerate: '계획 생성하기',
     planRegenerate: '다시 생성',
@@ -345,7 +414,8 @@ export const t = {
     invalidFormat: '잘못된 형식',
     usageToday: '오늘 AI 사용량',
     usageUnit: '포인트',
-    dailyLimitNote: '일일 총 한도: 15 포인트 (매일 자정 초기화)',
+    /** {n}: 하루 한도 포인트 (AI_LIMITS.dailyBudget) */
+    dailyLimitNote: '일일 총 한도: {n} 포인트 (매일 자정 초기화)',
     modelSection: 'AI 모델 정보',
     modelFast: '운동 분석 / 오늘의 팁 / 채팅',
     modelDeep: '부상 평가 / 훈련 계획',
