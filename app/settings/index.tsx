@@ -8,7 +8,9 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import * as Updates from 'expo-updates';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +19,7 @@ import { getAPIKey } from '../../src/services/ai/client';
 import { Button } from '../../src/components/common/Button';
 import { Card } from '../../src/components/common/Card';
 import { colors } from '../../src/utils/theme';
+import { formatDateTimeKST } from '../../src/utils/formatters';
 
 export default function SettingsScreen() {
   const { hasApiKey, setApiKey, clearApiKey, aiCallsToday } = useAppStore();
@@ -72,6 +75,31 @@ export default function SettingsScreen() {
   }
 
   const dailyBudgetPercent = Math.min(100, Math.round((aiCallsToday / AI_LIMITS.dailyBudget) * 100));
+
+  const { currentlyRunning } = Updates.useUpdates();
+  const [checking, setChecking] = useState(false);
+
+  /**
+   * 실행할 때 자동으로 확인하긴 하지만, 그건 다음 실행에야 적용된다.
+   * 여기서는 확인부터 적용까지 한 번에 끝낸다.
+   */
+  async function handleCheckUpdate() {
+    setChecking(true);
+    try {
+      const result = await Updates.checkForUpdateAsync();
+      if (!result.isAvailable) {
+        Alert.alert(t.update.section, t.update.upToDate);
+        return;
+      }
+      await Updates.fetchUpdateAsync();
+      Alert.alert(t.update.section, t.update.found);
+      await Updates.reloadAsync();
+    } catch {
+      Alert.alert(t.common.error, t.update.checkFailed);
+    } finally {
+      setChecking(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -160,9 +188,48 @@ export default function SettingsScreen() {
         <Card style={styles.card}>
           <InfoRow label={t.settings.appName} value="IronMan" />
           <View style={styles.divider} />
-          <InfoRow label={t.settings.version} value="1.0.0" />
+          {/* app.json 의 버전을 손으로 베껴 두면 언젠가 어긋난다.
+              runtimeVersion 정책이 appVersion 이라 실행 중인 값과 같다. */}
+          <InfoRow label={t.settings.version} value={Updates.runtimeVersion ?? '—'} />
           <View style={styles.divider} />
-          <InfoRow label={t.settings.platform} value="iOS / Android" />
+          <InfoRow label={t.settings.platform} value={Platform.OS} />
+        </Card>
+
+        <Text style={[styles.sectionTitle, styles.sectionSpaced]}>{t.update.section}</Text>
+        <Card style={styles.card}>
+          <InfoRow
+            label={t.update.source}
+            value={currentlyRunning.isEmbeddedLaunch ? t.update.embedded : t.update.fromUpdate}
+          />
+          {currentlyRunning.createdAt && (
+            <>
+              <View style={styles.divider} />
+              <InfoRow
+                label={t.update.lastUpdated}
+                value={formatDateTimeKST(currentlyRunning.createdAt)}
+              />
+            </>
+          )}
+          {currentlyRunning.channel && (
+            <>
+              <View style={styles.divider} />
+              <InfoRow label={t.update.channel} value={currentlyRunning.channel} />
+            </>
+          )}
+          <View style={styles.divider} />
+          {Updates.isEnabled ? (
+            <Button
+              label={checking ? t.update.checking : t.update.checkNow}
+              onPress={handleCheckUpdate}
+              loading={checking}
+              style={styles.updateBtn}
+            />
+          ) : (
+            <View style={styles.budgetNote}>
+              <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+              <Text style={styles.budgetNoteText}>{t.update.devDisabled}</Text>
+            </View>
+          )}
         </Card>
 
       </KeyboardAwareScrollView>
@@ -228,6 +295,7 @@ const styles = StyleSheet.create({
   modelLabel: { color: colors.textSecondary, fontSize: 12, marginBottom: 2 },
   modelName: { color: colors.text, fontSize: 14, fontWeight: '600' },
   modelCost: { color: colors.primaryLight, fontSize: 12, fontWeight: '600' },
+  updateBtn: { borderRadius: 10 },
   budgetNote: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   budgetNoteText: { color: colors.textMuted, fontSize: 12 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

@@ -7,6 +7,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { migrateDbIfNeeded } from '../src/db';
 import { colors } from '../src/utils/theme';
+import { UpdateBanner } from '../src/components/common/UpdateBanner';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -35,6 +36,9 @@ export default function RootLayout() {
             <Stack.Screen name="profile" />
             <Stack.Screen name="settings" />
           </Stack>
+          {/* Stack 뒤에 두어야 모든 화면 위에 뜬다. 무선 업데이트를 받는 중인지,
+              적용할 준비가 됐는지 알려준다 — 없으면 아무것도 렌더하지 않는다. */}
+          <UpdateBanner />
         </SQLiteProvider>
       </KeyboardProvider>
     </SafeAreaProvider>

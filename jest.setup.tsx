@@ -79,6 +79,56 @@ jest.mock('expo-splash-screen', () => ({
   hideAsync: jest.fn(),
 }));
 
+/**
+ * expo-updates. jest-expo 프리셋에는 목이 없어 직접 넣는다.
+ *
+ * `mockUpdatesState`를 테스트에서 갈아끼워 다운로드 중·적용 대기 같은 상태를
+ * 만들어 낸다. 기본값은 "아무 일도 없음"이라 다른 화면 테스트에는 영향이 없다.
+ */
+const mockUpdatesState: {
+  isEnabled: boolean;
+  useUpdates: Record<string, unknown>;
+} = {
+  isEnabled: true,
+  useUpdates: {},
+};
+
+const mockUpdatesIdle = {
+  currentlyRunning: { isEmbeddedLaunch: true, isEmergencyLaunch: false, emergencyLaunchReason: null },
+  isChecking: false,
+  isDownloading: false,
+  isUpdateAvailable: false,
+  isUpdatePending: false,
+  isRestarting: false,
+  isStartupProcedureRunning: false,
+  restartCount: 0,
+};
+
+const mockUpdates = {
+  get isEnabled() {
+    return mockUpdatesState.isEnabled;
+  },
+  runtimeVersion: '1.0.0',
+  channel: 'preview',
+  updateId: null,
+  isEmbeddedLaunch: true,
+  useUpdates: () => ({ ...mockUpdatesIdle, ...mockUpdatesState.useUpdates }),
+  reloadAsync: jest.fn(async () => undefined),
+  checkForUpdateAsync: jest.fn(async () => ({ isAvailable: false, isRollBackToEmbedded: false })),
+  fetchUpdateAsync: jest.fn(async () => ({ isNew: false, isRollBackToEmbedded: false })),
+  /** 테스트 전용 — 다음 렌더에서 useUpdates() 가 돌려줄 값을 정한다. */
+  __setState(next: Partial<typeof mockUpdatesState>) {
+    Object.assign(mockUpdatesState, next);
+  },
+};
+
+jest.mock('expo-updates', () => mockUpdates);
+
 beforeEach(() => {
   mockSecureStore.clear();
+  mockUpdatesState.isEnabled = true;
+  mockUpdatesState.useUpdates = {};
+  mockUpdates.reloadAsync.mockClear();
+  mockUpdates.checkForUpdateAsync.mockClear();
+  mockUpdates.fetchUpdateAsync.mockClear();
 });

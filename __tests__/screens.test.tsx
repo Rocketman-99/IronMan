@@ -23,6 +23,7 @@ const METRICS = {
 type ScreenCase = [name: string, load: () => { default: React.ComponentType<unknown> }];
 
 const screens: ScreenCase[] = [
+  ['app/_layout', () => require('../app/_layout')],
   ['app/index', () => require('../app/index')],
   ['app/+not-found', () => require('../app/+not-found')],
 

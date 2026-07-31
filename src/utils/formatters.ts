@@ -10,6 +10,17 @@ export function getNowKST(): string {
   return getKSTDate().toISOString().replace('Z', '+09:00');
 }
 
+/**
+ * Date 를 KST 의 'YYYY-MM-DD HH:mm' 으로. 업데이트 시각처럼 분 단위까지 필요한 곳에 쓴다.
+ *
+ * Intl 대신 UTC+9 로 옮겨 잘라 쓴다 — 기기 시간대 설정과 무관하게 앱 전체가
+ * KST 기준이어야 하기 때문이다.
+ */
+export function formatDateTimeKST(date: Date): string {
+  const shifted = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  return `${shifted.toISOString().slice(0, 10)} ${shifted.toISOString().slice(11, 16)}`;
+}
+
 export function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);

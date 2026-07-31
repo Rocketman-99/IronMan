@@ -428,6 +428,31 @@ export const t = {
     profileEntry: '프로필',
   },
 
+  /* ── 무선 업데이트 (expo-updates) ────────────────────── */
+  update: {
+    section: '앱 업데이트',
+    downloading: '새 버전 받는 중',
+    /** {n}: 0~100 진행률. 서버가 크기를 안 알려주면 이 줄 대신 downloading 만 쓴다. */
+    downloadingPercent: '새 버전 받는 중 {n}%',
+    ready: '새 버전 준비 완료',
+    applyNow: '지금 적용',
+    applying: '적용 중...',
+    failed: '업데이트를 받지 못했습니다',
+    dismiss: '닫기',
+    checkNow: '지금 확인',
+    checking: '확인 중...',
+    upToDate: '최신 버전입니다',
+    found: '새 버전을 찾았습니다. 적용합니다.',
+    checkFailed: '업데이트 확인에 실패했습니다',
+    source: '실행 중인 버전',
+    embedded: '설치된 APK 내장',
+    fromUpdate: '무선 업데이트',
+    lastUpdated: '업데이트 시각',
+    channel: '채널',
+    /** 개발 빌드에서는 expo-updates 가 꺼져 있어 확인 자체가 불가능하다. */
+    devDisabled: '개발 빌드에서는 업데이트를 확인할 수 없습니다.',
+  },
+
   /* ── AI 프롬프트 · 기본 응답 ─────────────────────────── */
   aiPrompt: {
     /** 서식 지침 — MarkdownText가 감당하는 범위로 제한한다. */
