@@ -122,9 +122,63 @@ describe('migrateDbIfNeeded', () => {
     await migrateDbIfNeeded(adapter(db));
 
     const v: any = db.prepare('PRAGMA user_version;').get();
-    expect(v.user_version).toBe(1);
+    expect(v.user_version).toBe(2);
 
-    const cols = db.prepare('PRAGMA table_info(goals);').all().map((c: any) => c.name);
-    expect(cols).toContain('race_type');
+    const goalCols = db.prepare('PRAGMA table_info(goals);').all().map((c: any) => c.name);
+    expect(goalCols).toContain('race_type');
+    const profileCols = db.prepare('PRAGMA table_info(user_profile);').all().map((c: any) => c.name);
+    expect(profileCols).toContain('plan_focus_sports');
+  });
+
+  /* ── v2: 훈련 계획 집중 종목 ─────────────────────────── */
+
+  it('v2 가 프로필에 집중 종목 컬럼을 추가한다', async () => {
+    const db = seedOldDatabase();
+    await migrateDbIfNeeded(adapter(db));
+
+    const cols = db.prepare('PRAGMA table_info(user_profile);').all().map((c: any) => c.name);
+    expect(cols).toContain('plan_focus_sports');
+
+    // 기존 사용자는 값이 비어 있어야 한다 — 앱은 이때 3종 전부로 취급한다.
+    const profile: any = db.prepare('SELECT * FROM user_profile WHERE id = 1;').get();
+    expect(profile.plan_focus_sports).toBeNull();
+  });
+
+  it('v2 는 프로필의 기존 값을 건드리지 않는다', async () => {
+    const db = seedOldDatabase();
+    await migrateDbIfNeeded(adapter(db));
+
+    const profile: any = db.prepare('SELECT * FROM user_profile WHERE id = 1;').get();
+    expect(profile.name).toBe('테스터');
+    expect(profile.fitness_level).toBe('intermediate');
+    expect(profile.created_at).toBe('2026-01-01');
+  });
+
+  it('v1 만 적용된 DB 도 v2 까지 올라간다', async () => {
+    // 지난 업데이트를 받아 v1 에 멈춰 있는 기기를 흉내낸다.
+    const db = seedOldDatabase();
+    db.exec('ALTER TABLE goals ADD COLUMN race_type TEXT;');
+    db.exec('ALTER TABLE goals ADD COLUMN race_date TEXT;');
+    db.exec('PRAGMA user_version = 1;');
+
+    await migrateDbIfNeeded(adapter(db));
+
+    const v: any = db.prepare('PRAGMA user_version;').get();
+    expect(v.user_version).toBe(2);
+    const cols = db.prepare('PRAGMA table_info(user_profile);').all().map((c: any) => c.name);
+    expect(cols).toContain('plan_focus_sports');
+    // v1 을 다시 돌리지 않았으므로 레이스 목표가 새로 생기면 안 된다.
+    const count: any = db.prepare("SELECT COUNT(*) as c FROM goals WHERE goal_type = 'race';").get();
+    expect(count.c).toBe(0);
+  });
+
+  it('두 번 돌려도 집중 종목 값이 유지된다', async () => {
+    const db = seedOldDatabase();
+    await migrateDbIfNeeded(adapter(db));
+    db.exec("UPDATE user_profile SET plan_focus_sports = 'running' WHERE id = 1;");
+    await migrateDbIfNeeded(adapter(db));
+
+    const profile: any = db.prepare('SELECT * FROM user_profile WHERE id = 1;').get();
+    expect(profile.plan_focus_sports).toBe('running');
   });
 });

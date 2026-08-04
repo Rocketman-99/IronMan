@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { t } from '../i18n/ko';
 import { type SQLiteDatabase } from 'expo-sqlite';
-import { type Message, type InjuryRiskAssessment, type TrainingPlan, type UserProfile } from '../types';
+import { type Message, type InjuryRiskAssessment, type TrainingPlan, type UserProfile, type SportType } from '../types';
 import { getDailyTip } from '../services/ai/dailyTip';
 import { sendChatMessage } from '../services/ai/chat';
 import { assessInjuryRisk } from '../services/ai/injuryRisk';
 import { generateTrainingPlan } from '../services/ai/trainingPlan';
-import { buildTrainingContext, type TrainingContext } from '../services/ai/context';
+import { buildTrainingContext, ALL_SPORTS, type TrainingContext } from '../services/ai/context';
 import { analyzeWorkout } from '../services/ai/postWorkoutAnalysis';
 import { getRecentWorkouts, updateAIAnalysis, getWorkoutById, getWorkoutsBySport } from '../db/queries/workouts';
 import { getTodayKST } from '../utils/formatters';
@@ -29,7 +29,8 @@ interface AIState {
   fetchDailyTip: (db: SQLiteDatabase, profile: UserProfile | null) => Promise<void>;
   sendChat: (db: SQLiteDatabase, text: string, profile: UserProfile | null) => Promise<void>;
   fetchInjuryRisk: (db: SQLiteDatabase, profile: UserProfile | null) => Promise<void>;
-  generatePlan: (db: SQLiteDatabase, profile: UserProfile | null) => Promise<void>;
+  /** `focus`: 이번 계획에서 집중할 종목. 생략하면 3종 전부로 본다. */
+  generatePlan: (db: SQLiteDatabase, profile: UserProfile | null, focus?: SportType[]) => Promise<void>;
   analyzeWorkoutAI: (db: SQLiteDatabase, workoutId: number, profile: UserProfile | null) => Promise<void>;
 
   setDailyTip: (tip: string, date: string) => void;
@@ -45,7 +46,7 @@ const FALLBACK_PROFILE: UserProfile = {
   id: 1, name: t.aiPrompt.fallbackName, birth_date: null, gender: null,
   height_cm: null, weight_kg: null, fitness_level: 'beginner',
   primary_goal: null, target_race_date: null, weekly_hours: 5,
-  resting_hr: null, max_hr: null, onboarding_done: 1,
+  resting_hr: null, max_hr: null, plan_focus_sports: null, onboarding_done: 1,
   created_at: '', updated_at: '',
 };
 
@@ -129,11 +130,11 @@ export const useAIStore = create<AIState>((set, get) => ({
     }
   },
 
-  generatePlan: async (db, profile) => {
+  generatePlan: async (db, profile, focus) => {
     if (!profile) return;
     set({ isLoading: true, progressChars: 0, startedAt: Date.now() });
     try {
-      const context = await buildTrainingContext(db, profile);
+      const context = await buildTrainingContext(db, profile, focus ?? ALL_SPORTS);
       set({ lastContext: context });
       const plan = await generateTrainingPlan(profile, context, (n) =>
         set({ progressChars: n })

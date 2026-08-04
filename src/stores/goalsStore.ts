@@ -4,6 +4,7 @@ import { type Goal, type NewGoal } from '../types';
 import {
   getAllGoals,
   createGoal,
+  updateGoal,
   deleteGoal,
   completeGoal,
   syncGoalProgress,
@@ -14,6 +15,7 @@ interface GoalsState {
   isLoading: boolean;
   loadGoals: (db: SQLiteDatabase) => Promise<void>;
   createGoal: (db: SQLiteDatabase, goal: NewGoal) => Promise<void>;
+  updateGoal: (db: SQLiteDatabase, id: number, goal: NewGoal) => Promise<void>;
   deleteGoal: (db: SQLiteDatabase, id: number) => Promise<void>;
   syncProgress: (db: SQLiteDatabase) => Promise<void>;
   /** 레이스 목표를 완주 처리한다 (자동 판정이 불가능한 유형). */
@@ -33,6 +35,12 @@ export const useGoalsStore = create<GoalsState>((set) => ({
 
   createGoal: async (db, goal) => {
     await createGoal(db, goal);
+    const goals = await getAllGoals(db);
+    set({ goals });
+  },
+
+  updateGoal: async (db, id, goal) => {
+    await updateGoal(db, id, goal);
     const goals = await getAllGoals(db);
     set({ goals });
   },

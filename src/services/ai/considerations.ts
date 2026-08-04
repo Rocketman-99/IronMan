@@ -8,6 +8,7 @@ import { t } from '../../i18n/ko';
  */
 
 export const PLAN_CONSIDERATIONS: { label: string; value: string }[] = [
+  { label: t.aiContext.focus, value: '아래에서 고른 종목' },
   { label: t.aiContext.goals, value: '레이스 종류와 남은 기간' },
   { label: t.aiContext.workouts, value: '최근 30일 기록' },
   { label: t.aiContext.trend, value: '주차별 훈련량 변화' },

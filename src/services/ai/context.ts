@@ -1,5 +1,5 @@
 import { type SQLiteDatabase } from 'expo-sqlite';
-import { type UserProfile, type WorkoutWithDetails, type Goal } from '../../types';
+import { type UserProfile, type WorkoutWithDetails, type Goal, type SportType } from '../../types';
 import { getRecentWorkouts } from '../../db/queries/workouts';
 import { getAllGoals } from '../../db/queries/goals';
 import { profileSummary, workoutSummary, buildGoalsContext } from './prompts';
@@ -18,6 +18,19 @@ export interface TrainingContext {
   /** 화면의 "고려한 정보" 카드에 뿌릴 항목 */
   considered: { label: string; value: string }[];
   workoutCount: number;
+  /** 계획을 만들 때 집중할 종목. 부상 평가에는 쓰지 않아 비어 있을 수 있다. */
+  focus?: SportType[];
+}
+
+export const ALL_SPORTS: SportType[] = ['running', 'swimming', 'cycling'];
+
+/** 저장된 문자열('running,cycling')을 종목 배열로. 비었거나 이상하면 3종 전부. */
+export function parseFocus(stored: string | null | undefined): SportType[] {
+  const parsed = (stored ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s): s is SportType => (ALL_SPORTS as string[]).includes(s));
+  return parsed.length > 0 ? parsed : ALL_SPORTS;
 }
 
 function weekBucket(workouts: WorkoutWithDetails[], startDaysAgo: number, endDaysAgo: number) {
@@ -47,7 +60,9 @@ function acwr(workouts: WorkoutWithDetails[]): number | null {
 
 export async function buildTrainingContext(
   db: SQLiteDatabase,
-  profile: UserProfile
+  profile: UserProfile,
+  /** 훈련 계획에서만 넘긴다. 부상 평가는 종목을 좁힐 이유가 없다. */
+  focus?: SportType[]
 ): Promise<TrainingContext> {
   const workouts = await getRecentWorkouts(db, 30);
   const goals = await getAllGoals(db);
@@ -88,7 +103,9 @@ ${bySport.map((s) => `- ${s.sport}: ${s.count}회, ${s.km.toFixed(1)}km`).join('
 - 평균 컨디션 점수: ${avgFeeling ? `${avgFeeling.toFixed(1)}/5` : '기록 없음'}
 
 최근 운동 (최신 10건):
-${workouts.slice(0, 10).map(workoutSummary).join('\n') || '기록 없음'}`;
+${workouts.slice(0, 10).map(workoutSummary).join('\n') || '기록 없음'}${
+    focus ? `\n\n사용자가 이번 계획에서 집중하기로 고른 종목: ${focus.map((s) => t.sport[s]).join(', ')}` : ''
+  }`;
 
   const considered: { label: string; value: string }[] = [
     { label: t.aiContext.workouts, value: `${workouts.length}건 (최근 30일)` },
@@ -108,5 +125,12 @@ ${workouts.slice(0, 10).map(workoutSummary).join('\n') || '기록 없음'}`;
     },
   ];
 
-  return { prompt, considered, workoutCount: workouts.length };
+  if (focus) {
+    considered.unshift({
+      label: t.aiContext.focus,
+      value: focus.map((s) => t.sport[s]).join(', '),
+    });
+  }
+
+  return { prompt, considered, workoutCount: workouts.length, focus };
 }

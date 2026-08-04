@@ -25,6 +25,11 @@ export interface UserProfile {
   weekly_hours: number;
   resting_hr: number | null;
   max_hr: number | null;
+  /**
+   * 훈련 계획을 만들 때 집중할 종목. 쉼표로 구분한 SportType 목록이다
+   * (예: `'running'`, `'running,cycling'`). 비어 있으면 3종 전부로 본다.
+   */
+  plan_focus_sports: string | null;
   onboarding_done: number;
   created_at: string;
   updated_at: string;
@@ -42,4 +47,5 @@ export interface ProfileDraft {
   weekly_hours: number;
   resting_hr?: number;
   max_hr?: number;
+  plan_focus_sports?: string;
 }

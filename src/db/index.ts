@@ -8,7 +8,7 @@ import { ALL_TABLES } from './schema';
  * CREATE TABLE IF NOT EXISTS 만으로는 **이미 앱을 쓰고 있는 기기의 테이블에
  * 컬럼이 추가되지 않는다.** 그래서 PRAGMA user_version 으로 단계를 관리한다.
  */
-const LATEST_VERSION = 1;
+const LATEST_VERSION = 2;
 
 type Migration = (db: SQLiteDatabase) => Promise<void>;
 
@@ -60,6 +60,18 @@ const MIGRATIONS: Record<number, Migration> = {
       profile.target_race_date ?? null,
       new Date().toISOString()
     );
+  },
+
+  /**
+   * v2 — 훈련 계획에서 집중할 종목을 기억한다.
+   *
+   * 계획을 만들 때마다 종목을 다시 고르지 않도록 마지막 선택을 남긴다.
+   * 값이 없으면(NULL) 3종 전부로 취급하므로 기존 사용자는 동작이 그대로다.
+   */
+  2: async (db) => {
+    if (!(await hasColumn(db, 'user_profile', 'plan_focus_sports'))) {
+      await db.execAsync('ALTER TABLE user_profile ADD COLUMN plan_focus_sports TEXT;');
+    }
   },
 };
 

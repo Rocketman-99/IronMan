@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { t } from '../../../src/i18n/ko';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,10 +9,12 @@ import { useGoalsStore } from '../../../src/stores/goalsStore';
 import { formatDday } from '../../../src/utils/races';
 import { type Goal } from '../../../src/types';
 
-function GoalCard({ goal, progress, onComplete }: {
+function GoalCard({ goal, progress, onComplete, onEdit, onDelete }: {
   goal: Goal;
   progress: number;
   onComplete: (id: number) => void;
+  onEdit: (id: number) => void;
+  onDelete: (goal: Goal) => void;
 }) {
   const color = sportColors[goal.sport_type as keyof typeof sportColors] ?? colors.primary;
   const done = goal.is_completed === 1;
@@ -20,7 +22,13 @@ function GoalCard({ goal, progress, onComplete }: {
   const dday = isRace ? formatDday(goal.race_date) : null;
 
   return (
-    <View style={[styles.card, done && styles.cardDone]}>
+    // 카드 전체가 수정으로 가는 버튼이다. 완주 표시·삭제는 별도 터치 영역이라
+    // 겹치지 않도록 카드 밖이 아니라 안쪽에 따로 둔다.
+    <TouchableOpacity
+      style={[styles.card, done && styles.cardDone]}
+      onPress={() => onEdit(goal.id)}
+      activeOpacity={0.8}
+    >
       <View style={styles.cardTop}>
         <Text style={[styles.goalTitle, done && styles.goalTitleDone]}>{goal.title}</Text>
         {done ? (
@@ -31,6 +39,13 @@ function GoalCard({ goal, progress, onComplete }: {
         ) : dday ? (
           <Text style={styles.dday}>{dday}</Text>
         ) : null}
+        <TouchableOpacity
+          onPress={() => onDelete(goal)}
+          style={styles.trashBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+        </TouchableOpacity>
       </View>
 
       {isRace ? (
@@ -70,14 +85,14 @@ function GoalCard({ goal, progress, onComplete }: {
           {t.goals.completedOn.replace('{date}', goal.completed_at.slice(0, 10))}
         </Text>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 
 export default function Goals() {
   const router = useRouter();
   const db = useSQLiteContext();
-  const { goals, loadGoals, isLoading, progressPercent, markComplete } = useGoalsStore();
+  const { goals, loadGoals, isLoading, progressPercent, markComplete, deleteGoal } = useGoalsStore();
 
   const load = useCallback(() => loadGoals(db), [db]);
   useEffect(() => { load(); }, []);
@@ -87,6 +102,14 @@ export default function Goals() {
 
   async function handleComplete(id: number) {
     await markComplete(db, id);
+  }
+
+  // 달성한 목표도 지울 수 있어야 한다. 되돌릴 수 없으니 한 번 묻는다.
+  function handleDelete(goal: Goal) {
+    Alert.alert(t.goals.deleteTitle, t.goals.deleteConfirm, [
+      { text: t.common.cancel, style: 'cancel' },
+      { text: t.common.delete, style: 'destructive', onPress: () => deleteGoal(db, goal.id) },
+    ]);
   }
 
   return (
@@ -102,8 +125,17 @@ export default function Goals() {
         data={[...active, ...done]}
         keyExtractor={item => String(item.id)}
         renderItem={({ item }) => (
-          <GoalCard goal={item} progress={progressPercent(item)} onComplete={handleComplete} />
+          <GoalCard
+            goal={item}
+            progress={progressPercent(item)}
+            onComplete={handleComplete}
+            onEdit={(id) => router.push(`/(app)/goals/${id}`)}
+            onDelete={handleDelete}
+          />
         )}
+        ListHeaderComponent={
+          goals.length > 0 ? <Text style={styles.editHint}>{t.goals.editHint}</Text> : null
+        }
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} tintColor={colors.primary} />}
         ListEmptyComponent={
@@ -125,6 +157,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '800', color: colors.text },
   addBtn: { padding: 4 },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
+  editHint: { color: colors.textMuted, fontSize: 12, marginBottom: 8 },
+  trashBtn: { padding: 4, marginLeft: 4 },
   card: { backgroundColor: colors.card, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.cardBorder },
   cardDone: { opacity: 0.75 },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },

@@ -41,6 +41,7 @@ const screens: ScreenCase[] = [
   ['(app)/progress/index', () => require('../app/(app)/progress/index')],
   ['(app)/goals/index', () => require('../app/(app)/goals/index')],
   ['(app)/goals/new', () => require('../app/(app)/goals/new')],
+  ['(app)/goals/[id]', () => require('../app/(app)/goals/[id]')],
   ['workout/[id]', () => require('../app/workout/[id]')],
   ['ai/coach', () => require('../app/ai/coach')],
   ['ai/injury', () => require('../app/ai/injury')],

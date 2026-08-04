@@ -28,6 +28,37 @@ export async function createGoal(db: SQLiteDatabase, goal: NewGoal): Promise<num
   return result.lastInsertRowId;
 }
 
+export async function getGoalById(db: SQLiteDatabase, id: number): Promise<Goal | null> {
+  const row = await db.getFirstAsync<Goal>('SELECT * FROM goals WHERE id = ?', id);
+  return row ?? null;
+}
+
+/**
+ * 목표 내용을 고친다.
+ *
+ * `created_at` 과 `current_value` 는 건드리지 않는다 — 목표치를 바꿨다고 지금까지
+ * 쌓인 진행이 사라지면 안 된다. 새 목표치 기준 달성 여부는 다음 `syncGoalProgress`
+ * 에서 다시 계산된다.
+ */
+export async function updateGoal(db: SQLiteDatabase, id: number, goal: NewGoal): Promise<void> {
+  await db.runAsync(
+    `UPDATE goals SET
+       sport_type = ?, goal_type = ?, title = ?, target_value = ?, unit = ?,
+       period = ?, target_date = ?, race_type = ?, race_date = ?
+     WHERE id = ?`,
+    goal.sport_type,
+    goal.goal_type,
+    goal.title,
+    goal.target_value,
+    goal.unit,
+    goal.period ?? null,
+    goal.target_date ?? null,
+    goal.race_type ?? null,
+    goal.race_date ?? null,
+    id
+  );
+}
+
 export async function deleteGoal(db: SQLiteDatabase, id: number): Promise<void> {
   await db.runAsync('DELETE FROM goals WHERE id = ?', id);
 }

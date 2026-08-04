@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   weekly_hours    REAL DEFAULT 5,
   resting_hr      INTEGER,
   max_hr          INTEGER,
+  plan_focus_sports TEXT,
   onboarding_done INTEGER NOT NULL DEFAULT 0,
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL

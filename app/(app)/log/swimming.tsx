@@ -69,9 +69,13 @@ export default function SwimmingLog() {
         analyzeWorkoutAI(db, workoutId, profile);
       }
       // 저장하고 그냥 뒤로 가면 저장이 됐는지 알 수 없다. 방금 만든 기록을 열어
-      // AI 분석이 붙는 것까지 보이게 한다. replace 라서 뒤로가기는 기록 탭으로 간다.
-      if (workoutId) router.replace(`/workout/${workoutId}`);
-      else router.back();
+      // AI 분석이 붙는 것까지 보이게 한다.
+      //
+      // replace 를 쓰면 안 된다. 이 화면은 탭 안에 있고 /workout/[id] 는 루트
+      // 스택이라, replace 가 루트에서 걸려 탭 트리를 통째로 날린다 — 돌아갈
+      // 화면이 없어져 뒤로가기가 앱을 종료시킨다. 대시보드로 옮긴 뒤 얹는다.
+      router.navigate('/(app)');
+      if (workoutId) router.push(`/workout/${workoutId}`);
     } catch {
       // 실패해도 조용히 닫히면 저장된 줄 안다.
       Alert.alert(t.common.error, t.common.saveFailed);

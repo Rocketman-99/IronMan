@@ -24,6 +24,16 @@ export default function WorkoutDetail() {
     getWorkoutById(db, Number(id)).then(w => { setWorkout(w); setLoading(false); });
   }, [id]);
 
+  /**
+   * 이 화면은 기록 저장 직후·히스토리·성장 그래프·딥링크 등 여러 경로로 열린다.
+   * 그중 하나라도 스택에 아래가 없으면 뒤로가기가 먹히지 않아 화면에 갇힌다
+   * (예전에 저장 직후 replace 를 쓰다 실제로 그랬다). 그때는 대시보드로 보낸다.
+   */
+  function goBack() {
+    if (router.canGoBack()) router.back();
+    else router.replace('/(app)');
+  }
+
   async function handleDelete() {
     Alert.alert(
       t.workoutDetail.deleteTitle,
@@ -32,7 +42,7 @@ export default function WorkoutDetail() {
         { text: t.common.cancel, style: 'cancel' },
         { text: t.common.delete, style: 'destructive', onPress: async () => {
           await deleteWorkout(db, Number(id));
-          router.back();
+          goBack();
         }},
       ]
     );
@@ -63,7 +73,7 @@ export default function WorkoutDetail() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={goBack} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn}>
