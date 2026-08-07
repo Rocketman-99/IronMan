@@ -33,6 +33,13 @@ const emptyStats: WeeklyStats = {
   workout_count: 0,
 };
 
+/**
+ * 목록은 상한 없이 전부 읽는다.
+ *
+ * 예전에는 `getRecentWorkouts` 의 기본 상한 20 이 그대로 걸려, 21번째부터는
+ * DB 에 있는데도 히스토리·성장·대시보드에 나오지 않았다. 상세를 LEFT JOIN 으로
+ * 접어 쿼리가 1회로 고정됐으므로 건수가 늘어도 왕복이 늘지 않는다.
+ */
 export const useWorkoutStore = create<WorkoutState>((set) => ({
   recentWorkouts: [],
   weeklyStats: emptyStats,

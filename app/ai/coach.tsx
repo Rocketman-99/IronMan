@@ -47,7 +47,7 @@ export default function AICoach() {
     const msg = (text ?? input).trim();
     if (!msg || isStreaming) return;
     if (!hasApiKey) { return; }
-    if (!checkAndIncrementAIUsage('fast')) return;
+    if (!checkAndIncrementAIUsage('fast', db)) return;
     setInput('');
     await sendChat(db, msg, profile);
   }
@@ -57,7 +57,7 @@ export default function AICoach() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}><Ionicons name="chevron-back" size={24} color={colors.text} /></TouchableOpacity>
         <Text style={styles.title}>{t.dashboard.aiCoach}</Text>
-        <TouchableOpacity onPress={clearChat}><Ionicons name="trash-outline" size={20} color={colors.textMuted} /></TouchableOpacity>
+        <TouchableOpacity onPress={() => clearChat(db)}><Ionicons name="trash-outline" size={20} color={colors.textMuted} /></TouchableOpacity>
       </View>
 
       {!hasApiKey && (

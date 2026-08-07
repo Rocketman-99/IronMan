@@ -7,6 +7,7 @@ import { colors } from '../../src/utils/theme';
 import { t } from '../../src/i18n/ko';
 import { useProfileStore } from '../../src/stores/profileStore';
 import { useAppStore } from '../../src/stores/appStore';
+import { useAIStore } from '../../src/stores/aiStore';
 
 export default function AppLayout() {
   const router = useRouter();
@@ -14,12 +15,16 @@ export default function AppLayout() {
   const insets = useSafeAreaInsets();
   const { profile, loadProfile } = useProfileStore();
   const { initialize } = useAppStore();
+  const { hydrate } = useAIStore();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     async function boot() {
-      await initialize();
+      await initialize(db);
       await loadProfile(db);
+      // 저장해둔 계획·부상 평가·오늘의 팁·대화를 되살린다. 예전에는 전부
+      // 메모리에만 있어 앱을 다시 켤 때마다 사라졌다.
+      await hydrate(db);
       setIsReady(true);
     }
     boot();

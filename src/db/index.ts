@@ -1,5 +1,5 @@
 import { type SQLiteDatabase } from 'expo-sqlite';
-import { ALL_TABLES } from './schema';
+import { ALL_TABLES, CREATE_TRAINING_PLANS } from './schema';
 
 /**
  * 스키마 버전. 컬럼을 추가하거나 데이터를 옮길 때마다 하나 올리고
@@ -8,7 +8,7 @@ import { ALL_TABLES } from './schema';
  * CREATE TABLE IF NOT EXISTS 만으로는 **이미 앱을 쓰고 있는 기기의 테이블에
  * 컬럼이 추가되지 않는다.** 그래서 PRAGMA user_version 으로 단계를 관리한다.
  */
-const LATEST_VERSION = 2;
+const LATEST_VERSION = 3;
 
 type Migration = (db: SQLiteDatabase) => Promise<void>;
 
@@ -72,6 +72,17 @@ const MIGRATIONS: Record<number, Migration> = {
     if (!(await hasColumn(db, 'user_profile', 'plan_focus_sports'))) {
       await db.execAsync('ALTER TABLE user_profile ADD COLUMN plan_focus_sports TEXT;');
     }
+  },
+
+  /**
+   * v3 — 훈련 계획을 보관한다.
+   *
+   * 계획이 메모리에만 있어 앱을 다시 켜면 사라졌다. 테이블 생성뿐이라 기존
+   * 데이터는 건드리지 않는다. ALL_TABLES 에도 있어 새 설치에서는 이미 만들어져
+   * 있지만, 여기 한 번 더 두어 v2 에 멈춰 있던 기기도 확실히 갖게 한다.
+   */
+  3: async (db) => {
+    await db.execAsync(CREATE_TRAINING_PLANS);
   },
 };
 

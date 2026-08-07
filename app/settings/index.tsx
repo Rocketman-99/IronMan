@@ -20,6 +20,10 @@ import { Button } from '../../src/components/common/Button';
 import { Card } from '../../src/components/common/Card';
 import { colors } from '../../src/utils/theme';
 import { formatDateTimeKST } from '../../src/utils/formatters';
+import { useSQLiteContext } from 'expo-sqlite';
+import { getWorkoutCount } from '../../src/db/queries/workouts';
+import { getAllGoals } from '../../src/db/queries/goals';
+import { getTrainingPlanCount } from '../../src/db/queries/trainingPlans';
 
 export default function SettingsScreen() {
   const { hasApiKey, setApiKey, clearApiKey, aiCallsToday } = useAppStore();
@@ -78,6 +82,19 @@ export default function SettingsScreen() {
 
   const { currentlyRunning } = Updates.useUpdates();
   const [checking, setChecking] = useState(false);
+
+  /**
+   * 저장 현황. "기록이 사라진 것 같다"고 느낄 때 사용자가 직접 확인할 지점이다.
+   * 목록을 다 읽지 않고 개수만 센다.
+   */
+  const db = useSQLiteContext();
+  const [counts, setCounts] = useState<{ workouts: number; goals: number; plans: number } | null>(null);
+
+  useEffect(() => {
+    Promise.all([getWorkoutCount(db), getAllGoals(db), getTrainingPlanCount(db)])
+      .then(([workouts, goals, plans]) => setCounts({ workouts, goals: goals.length, plans }))
+      .catch(() => setCounts(null));
+  }, [db]);
 
   /**
    * 실행할 때 자동으로 확인하긴 하지만, 그건 다음 실행에야 적용된다.
@@ -193,6 +210,16 @@ export default function SettingsScreen() {
           <InfoRow label={t.settings.version} value={Updates.runtimeVersion ?? '—'} />
           <View style={styles.divider} />
           <InfoRow label={t.settings.platform} value={Platform.OS} />
+          {counts && (
+            <>
+              <View style={styles.divider} />
+              <InfoRow label={t.settings.savedWorkouts} value={`${counts.workouts}${t.common.countUnit}`} />
+              <View style={styles.divider} />
+              <InfoRow label={t.settings.savedGoals} value={`${counts.goals}${t.settings.savedUnit}`} />
+              <View style={styles.divider} />
+              <InfoRow label={t.settings.savedPlans} value={`${counts.plans}${t.settings.savedUnit}`} />
+            </>
+          )}
         </Card>
 
         <Text style={[styles.sectionTitle, styles.sectionSpaced]}>{t.update.section}</Text>

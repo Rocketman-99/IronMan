@@ -379,6 +379,11 @@ export const t = {
     recommendations: '권장 사항',
 
     planTitle: '훈련 계획',
+    planNew: '새 계획 만들기',
+    planDeleteTitle: '계획 삭제',
+    planDeleteConfirm: '이 계획을 삭제하시겠어요? 되돌릴 수 없습니다.',
+    planSavedNote: '계획은 지울 때까지 보관됩니다',
+    injuryAssessedAt: '{date} 평가',
     focusLabel: '집중할 종목',
     focusHint: '고른 종목으로만 계획을 만듭니다. 하나 이상 선택하세요.',
     /** {n}: 주차 번호 */
@@ -435,6 +440,10 @@ export const t = {
     version: '버전',
     platform: '플랫폼',
     profileEntry: '프로필',
+    savedWorkouts: '저장된 운동',
+    savedGoals: '저장된 목표',
+    savedPlans: '보관 중인 계획',
+    savedUnit: '개',
   },
 
   /* ── 무선 업데이트 (expo-updates) ────────────────────── */

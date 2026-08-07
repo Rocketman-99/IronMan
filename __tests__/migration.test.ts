@@ -122,7 +122,7 @@ describe('migrateDbIfNeeded', () => {
     await migrateDbIfNeeded(adapter(db));
 
     const v: any = db.prepare('PRAGMA user_version;').get();
-    expect(v.user_version).toBe(2);
+    expect(v.user_version).toBe(3);
 
     const goalCols = db.prepare('PRAGMA table_info(goals);').all().map((c: any) => c.name);
     expect(goalCols).toContain('race_type');
@@ -154,7 +154,7 @@ describe('migrateDbIfNeeded', () => {
     expect(profile.created_at).toBe('2026-01-01');
   });
 
-  it('v1 만 적용된 DB 도 v2 까지 올라간다', async () => {
+  it('v1 에 멈춘 DB 도 최신까지 올라간다', async () => {
     // 지난 업데이트를 받아 v1 에 멈춰 있는 기기를 흉내낸다.
     const db = seedOldDatabase();
     db.exec('ALTER TABLE goals ADD COLUMN race_type TEXT;');
@@ -164,7 +164,7 @@ describe('migrateDbIfNeeded', () => {
     await migrateDbIfNeeded(adapter(db));
 
     const v: any = db.prepare('PRAGMA user_version;').get();
-    expect(v.user_version).toBe(2);
+    expect(v.user_version).toBe(3);
     const cols = db.prepare('PRAGMA table_info(user_profile);').all().map((c: any) => c.name);
     expect(cols).toContain('plan_focus_sports');
     // v1 을 다시 돌리지 않았으므로 레이스 목표가 새로 생기면 안 된다.
@@ -180,5 +180,66 @@ describe('migrateDbIfNeeded', () => {
 
     const profile: any = db.prepare('SELECT * FROM user_profile WHERE id = 1;').get();
     expect(profile.plan_focus_sports).toBe('running');
+  });
+
+  /* ── v3: 훈련 계획 보관 ──────────────────────────────── */
+
+  it('v3 가 계획 테이블을 만든다', async () => {
+    const db = seedOldDatabase();
+    await migrateDbIfNeeded(adapter(db));
+
+    const tables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table';")
+      .all()
+      .map((r: any) => r.name);
+    expect(tables).toContain('training_plans');
+  });
+
+  it('v3 는 기존 운동·목표·프로필을 건드리지 않는다', async () => {
+    const db = seedOldDatabase();
+    await migrateDbIfNeeded(adapter(db));
+
+    const workouts: any[] = db.prepare('SELECT * FROM workouts;').all();
+    expect(workouts).toHaveLength(1);
+    expect(workouts[0].distance_m).toBe(5000);
+
+    const goal: any = db.prepare("SELECT * FROM goals WHERE goal_type = 'distance';").get();
+    expect(goal.title).toBe('주간 30km 러닝');
+
+    const profile: any = db.prepare('SELECT * FROM user_profile WHERE id = 1;').get();
+    expect(profile.name).toBe('테스터');
+  });
+
+  it('v2 에 멈춘 기기가 v3 까지 올라간다', async () => {
+    // 지난 업데이트만 받아 v2 에 있는 기기를 흉내낸다.
+    const db = seedOldDatabase();
+    db.exec('ALTER TABLE goals ADD COLUMN race_type TEXT;');
+    db.exec('ALTER TABLE goals ADD COLUMN race_date TEXT;');
+    db.exec('ALTER TABLE user_profile ADD COLUMN plan_focus_sports TEXT;');
+    db.exec("UPDATE user_profile SET plan_focus_sports = 'cycling' WHERE id = 1;");
+    db.exec('PRAGMA user_version = 2;');
+
+    await migrateDbIfNeeded(adapter(db));
+
+    const v: any = db.prepare('PRAGMA user_version;').get();
+    expect(v.user_version).toBe(3);
+    // v1·v2 를 다시 돌리지 않았으므로 레이스 목표가 생기거나 값이 지워지면 안 된다.
+    const count: any = db.prepare("SELECT COUNT(*) as c FROM goals WHERE goal_type = 'race';").get();
+    expect(count.c).toBe(0);
+    const profile: any = db.prepare('SELECT * FROM user_profile WHERE id = 1;').get();
+    expect(profile.plan_focus_sports).toBe('cycling');
+  });
+
+  it('두 번 돌려도 보관 중인 계획이 남는다', async () => {
+    const db = seedOldDatabase();
+    await migrateDbIfNeeded(adapter(db));
+    db.exec(`INSERT INTO training_plans (title, total_weeks, plan_json, created_at)
+             VALUES ('내 계획', 4, '{}', '2026-01-01');`);
+
+    await migrateDbIfNeeded(adapter(db));
+
+    const plans: any[] = db.prepare('SELECT * FROM training_plans;').all();
+    expect(plans).toHaveLength(1);
+    expect(plans[0].title).toBe('내 계획');
   });
 });

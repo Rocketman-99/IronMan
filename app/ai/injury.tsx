@@ -11,16 +11,17 @@ import { ConsiderationList, GeneratingIndicator, ContextSummary } from '../../sr
 import { INJURY_CONSIDERATIONS } from '../../src/services/ai/considerations';
 import { useProfileStore } from '../../src/stores/profileStore';
 import { useAppStore } from '../../src/stores/appStore';
+import { formatDateTimeKST } from '../../src/utils/formatters';
 
 export default function InjuryRisk() {
   const router = useRouter();
   const db = useSQLiteContext();
-  const { injuryAssessment, fetchInjuryRisk, isLoading, progressChars, startedAt, lastContext } = useAIStore();
+  const { injuryAssessment, injuryAssessedAt, fetchInjuryRisk, isLoading, progressChars, startedAt, lastContext } = useAIStore();
   const { profile } = useProfileStore();
   const { hasApiKey, checkAndIncrementAIUsage } = useAppStore();
 
   async function handleAssess() {
-    if (!checkAndIncrementAIUsage('deep')) return;
+    if (!checkAndIncrementAIUsage('deep', db)) return;
     await fetchInjuryRisk(db, profile);
   }
 
@@ -48,6 +49,12 @@ export default function InjuryRisk() {
             riskValue < 60 ? t.ai.riskMid : t.ai.riskHigh}
         </Text>
         {risk?.summary ? <MarkdownText style={styles.summary}>{risk.summary}</MarkdownText> : null}
+        {/* 저장된 평가라 언제 본 판단인지 밝혀야 오해가 없다. */}
+        {injuryAssessedAt ? (
+          <Text style={styles.assessedAt}>
+            {t.ai.injuryAssessedAt.replace('{date}', formatDateTimeKST(new Date(injuryAssessedAt)))}
+          </Text>
+        ) : null}
       </View>
 
       {!hasApiKey && (
@@ -109,6 +116,7 @@ const styles = StyleSheet.create({
   gaugeValue: { fontSize: 56, fontWeight: '900', marginBottom: 4 },
   gaugeSub: { color: colors.textSecondary, fontSize: 14 },
   summary: { color: colors.textMuted, fontSize: 13, marginTop: 8, textAlign: 'center', lineHeight: 18 },
+  assessedAt: { color: colors.textMuted, fontSize: 11, marginTop: 8 },
   noKey: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 16 },
   noKeyText: { flex: 1, color: colors.textSecondary, fontSize: 13 },
   keyBtn: { backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { t } from '../../src/i18n/ko';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,15 +11,21 @@ import { PLAN_CONSIDERATIONS } from '../../src/services/ai/considerations';
 import { useProfileStore } from '../../src/stores/profileStore';
 import { useAppStore } from '../../src/stores/appStore';
 import { ALL_SPORTS, parseFocus } from '../../src/services/ai/context';
+import { formatDateTimeKST } from '../../src/utils/formatters';
+import { type StoredPlan } from '../../src/db/queries/trainingPlans';
 import { type SportType } from '../../src/types';
 
 export default function TrainingPlan() {
   const router = useRouter();
   const db = useSQLiteContext();
-  const { trainingPlan, generatePlan, isLoading, progressChars, startedAt, lastContext } = useAIStore();
+  const { plans, generatePlan, removePlan, isLoading, progressChars, startedAt } = useAIStore();
   const { profile, saveProfile } = useProfileStore();
   const { hasApiKey, checkAndIncrementAIUsage } = useAppStore();
-  const [expanded, setExpanded] = useState<number | null>(null);
+  /** 펼친 계획의 id. 계획이 여러 개라 인덱스가 아니라 id 로 잡는다. */
+  const [openPlan, setOpenPlan] = useState<number | null>(null);
+  const [openWeek, setOpenWeek] = useState<string | null>(null);
+  /** 계획이 있어도 새로 만들 수 있게 하는 토글 */
+  const [creating, setCreating] = useState(false);
   /** 지난번에 고른 종목을 그대로 띄운다. 저장된 게 없으면 3종 전부. */
   const [focus, setFocus] = useState<SportType[]>(() => parseFocus(profile?.plan_focus_sports));
 
@@ -34,12 +40,20 @@ export default function TrainingPlan() {
   }
 
   async function handleGenerate() {
-    if (!checkAndIncrementAIUsage('deep')) return;
+    if (!checkAndIncrementAIUsage('deep', db)) return;
     // 다음에 열었을 때 다시 고르지 않도록 남긴다.
     if (focus.join(',') !== (profile?.plan_focus_sports ?? '')) {
       await saveProfile(db, { plan_focus_sports: focus.join(',') });
     }
     await generatePlan(db, profile, focus);
+    setCreating(false);
+  }
+
+  function handleDelete(plan: StoredPlan) {
+    Alert.alert(t.ai.planDeleteTitle, t.ai.planDeleteConfirm, [
+      { text: t.common.cancel, style: 'cancel' },
+      { text: t.common.delete, style: 'destructive', onPress: () => removePlan(db, plan.id) },
+    ]);
   }
 
   function SportFocus() {
@@ -72,7 +86,7 @@ export default function TrainingPlan() {
         <Text style={styles.backText}>{t.ai.planTitle}</Text>
       </TouchableOpacity>
 
-      {!trainingPlan ? (
+      {plans.length === 0 || creating ? (
         <View style={styles.empty}>
           <Ionicons name="calendar-outline" size={56} color={colors.textMuted} />
           <Text style={styles.emptyTitle}>{t.ai.planEmpty}</Text>
@@ -91,32 +105,79 @@ export default function TrainingPlan() {
               {isLoading && <GeneratingIndicator startedAt={startedAt} progressChars={progressChars} />}
             </>
           )}
+          {creating && !isLoading && (
+            <TouchableOpacity onPress={() => setCreating(false)}>
+              <Text style={styles.cancelText}>{t.common.cancel}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <>
-          <Text style={styles.planTitle}>{trainingPlan.title}</Text>
-          {trainingPlan.weeks?.map((week, idx) => (
-            <TouchableOpacity key={idx} style={styles.weekCard} onPress={() => setExpanded(expanded === idx ? null : idx)}>
-              <View style={styles.weekHeader}>
-                <Text style={styles.weekTitle}>{t.ai.weekLabel.replace('{n}', String(week.weekNumber))}</Text>
-                <Ionicons name={expanded === idx ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
-              </View>
-              <Text style={styles.weekFocus}>{week.focus}</Text>
-              {expanded === idx && week.sessions?.map((s, si) => (
-                <View key={si} style={styles.session}>
-                  <Text style={styles.sessionDay}>{s.day} • {s.sport} • {s.duration}</Text>
-                  <Text style={styles.sessionDesc}>{s.description}</Text>
-                </View>
-              ))}
-            </TouchableOpacity>
-          ))}
-          <ContextSummary context={lastContext} />
-          {isLoading && <GeneratingIndicator startedAt={startedAt} progressChars={progressChars} />}
-          {/* 다시 만들 때 종목을 바꿀 수 있어야 한다. */}
-          <SportFocus />
-          <TouchableOpacity style={styles.retryBtn} onPress={handleGenerate} disabled={isLoading}>
-            {isLoading ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.retryBtnText}>{t.ai.planRegenerate}</Text>}
+          <TouchableOpacity style={styles.newBtn} onPress={() => setCreating(true)}>
+            <Ionicons name="add" size={18} color={colors.primary} />
+            <Text style={styles.newBtnText}>{t.ai.planNew}</Text>
           </TouchableOpacity>
+
+          {plans.map((stored) => {
+            const open = openPlan === stored.id;
+            return (
+              <View key={stored.id} style={styles.planCard}>
+                <TouchableOpacity
+                  style={styles.planHeader}
+                  onPress={() => setOpenPlan(open ? null : stored.id)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.planInfo}>
+                    <Text style={styles.planTitle}>{stored.plan.title}</Text>
+                    {/* 생성일을 같이 보여줘야 어느 시점의 계획인지 알 수 있다. */}
+                    <Text style={styles.planMeta}>
+                      {formatDateTimeKST(new Date(stored.createdAt))}
+                      {stored.focusSports
+                        ? ` · ${stored.focusSports.split(',').map((sp) => t.sport[sp as SportType] ?? sp).join(', ')}`
+                        : ''}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleDelete(stored)}
+                    style={styles.trashBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                  </TouchableOpacity>
+                  <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
+                </TouchableOpacity>
+
+                {open && (
+                  <>
+                    {stored.plan.weeks?.map((week, idx) => {
+                      const weekKey = `${stored.id}-${idx}`;
+                      return (
+                        <TouchableOpacity
+                          key={weekKey}
+                          style={styles.weekCard}
+                          onPress={() => setOpenWeek(openWeek === weekKey ? null : weekKey)}
+                        >
+                          <View style={styles.weekHeader}>
+                            <Text style={styles.weekTitle}>{t.ai.weekLabel.replace('{n}', String(week.weekNumber))}</Text>
+                            <Ionicons name={openWeek === weekKey ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
+                          </View>
+                          <Text style={styles.weekFocus}>{week.focus}</Text>
+                          {openWeek === weekKey && week.sessions?.map((sess, si) => (
+                            <View key={si} style={styles.session}>
+                              <Text style={styles.sessionDay}>{sess.day} • {sess.sport} • {sess.duration}</Text>
+                              <Text style={styles.sessionDesc}>{sess.description}</Text>
+                            </View>
+                          ))}
+                        </TouchableOpacity>
+                      );
+                    })}
+                    {stored.considered && <ConsiderationList items={stored.considered} />}
+                  </>
+                )}
+              </View>
+            );
+          })}
+          {isLoading && <GeneratingIndicator startedAt={startedAt} progressChars={progressChars} />}
         </>
       )}
     </ScrollView>
@@ -141,7 +202,15 @@ const styles = StyleSheet.create({
   focusHint: { color: colors.textMuted, fontSize: 12, marginTop: 8 },
   btn: { backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 14, marginTop: 8 },
   btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  planTitle: { color: colors.text, fontSize: 22, fontWeight: '800', marginBottom: 20 },
+  newBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 1, borderColor: colors.primary, borderRadius: 12, paddingVertical: 12, marginBottom: 16 },
+  newBtnText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
+  cancelText: { color: colors.textMuted, fontSize: 14, marginTop: 4 },
+  planCard: { backgroundColor: colors.surface, borderRadius: 14, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.cardBorder },
+  planHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  planInfo: { flex: 1 },
+  planMeta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  trashBtn: { padding: 4 },
+  planTitle: { color: colors.text, fontSize: 16, fontWeight: '800' },
   weekCard: { backgroundColor: colors.card, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.cardBorder },
   weekHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   weekTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },

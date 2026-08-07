@@ -65,7 +65,7 @@ export default function SwimmingLog() {
           stroke_type: strokeType,
         },
       });
-      if (hasApiKey && workoutId && checkAndIncrementAIUsage('fast')) {
+      if (hasApiKey && workoutId && checkAndIncrementAIUsage('fast', db)) {
         analyzeWorkoutAI(db, workoutId, profile);
       }
       // 저장하고 그냥 뒤로 가면 저장이 됐는지 알 수 없다. 방금 만든 기록을 열어

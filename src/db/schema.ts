@@ -116,6 +116,25 @@ CREATE TABLE IF NOT EXISTS ai_conversations (
 );
 `;
 
+/**
+ * 생성한 훈련 계획을 보관한다.
+ *
+ * 예전에는 계획이 메모리(zustand)에만 있어 앱을 다시 켜면 사라졌다. 사용자가
+ * 직접 지울 때까지 남아야 하므로 테이블로 옮겼다. 여러 개를 쌓아 두고 지난
+ * 계획과 비교할 수 있다.
+ */
+export const CREATE_TRAINING_PLANS = `
+CREATE TABLE IF NOT EXISTS training_plans (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  title           TEXT NOT NULL,
+  total_weeks     INTEGER NOT NULL,
+  plan_json       TEXT NOT NULL,
+  focus_sports    TEXT,
+  context_json    TEXT,
+  created_at      TEXT NOT NULL
+);
+`;
+
 export const CREATE_APP_SETTINGS = `
 CREATE TABLE IF NOT EXISTS app_settings (
   key     TEXT PRIMARY KEY,
@@ -133,5 +152,6 @@ export const ALL_TABLES = [
   CREATE_CYCLING_DETAILS,
   CREATE_GOALS,
   CREATE_AI_CONVERSATIONS,
+  CREATE_TRAINING_PLANS,
   CREATE_APP_SETTINGS,
 ];
