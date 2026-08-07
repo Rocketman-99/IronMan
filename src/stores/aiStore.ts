@@ -13,7 +13,7 @@ import {
   SETTING_KEYS,
   getJsonSetting,
   setJsonSetting,
-  saveConversation,
+  replaceConversation,
   getLatestConversation,
   deleteConversations,
 } from '../db/queries/ai-logs';
@@ -165,7 +165,8 @@ export const useAIStore = create<AIState>((set, get) => ({
       await sendChatMessage(messages, safeProfile, workouts, get().appendStreamChunk);
       get().finalizeStream();
       // 한 턴이 끝날 때마다 대화 전체를 최신 상태로 남긴다.
-      await saveConversation(db, 'coaching', get().chatMessages);
+      // replace 라 행이 쌓이지 않고 대화당 한 행만 유지된다.
+      await replaceConversation(db, 'coaching', get().chatMessages);
     } catch (e) {
       get().setError(String(e));
     }

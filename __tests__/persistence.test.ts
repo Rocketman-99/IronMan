@@ -19,6 +19,7 @@ import {
   getJsonSetting,
   setJsonSetting,
   saveConversation,
+  replaceConversation,
   getLatestConversation,
   deleteConversations,
 } from '../src/db/queries/ai-logs';
@@ -177,6 +178,53 @@ describe('코치 대화 보관', () => {
   it('대화가 없으면 빈 배열', async () => {
     const { db } = await freshDb();
     expect(await getLatestConversation(db, 'coaching')).toEqual([]);
+  });
+
+  it('턴이 쌓여도 한 행만 남는다', async () => {
+    const { raw, db } = await freshDb();
+    const messages: { role: 'user' | 'assistant'; content: string }[] = [];
+
+    // 10턴을 주고받는다. 매 턴 대화 전체를 저장한다.
+    for (let i = 0; i < 10; i++) {
+      messages.push({ role: 'user', content: `질문 ${i}` });
+      messages.push({ role: 'assistant', content: `답변 ${i}` });
+      await replaceConversation(db, 'coaching', messages);
+    }
+
+    // 예전에는 매 턴 INSERT 라 10행이 쌓였다 — 메시지 110개 분량.
+    const rows: any[] = raw.prepare("SELECT * FROM ai_conversations WHERE conv_type = 'coaching';").all();
+    expect(rows).toHaveLength(1);
+
+    const latest = await getLatestConversation(db, 'coaching');
+    expect(latest).toHaveLength(20);
+    expect(latest[19].content).toBe('답변 9');
+  });
+
+  it('다른 종류의 대화는 건드리지 않는다', async () => {
+    const { raw, db } = await freshDb();
+    await saveConversation(db, 'analysis', [{ role: 'user', content: '운동 분석' }]);
+    await replaceConversation(db, 'coaching', [{ role: 'user', content: '안녕' }]);
+    await replaceConversation(db, 'coaching', [{ role: 'user', content: '안녕 다시' }]);
+
+    const analysis: any[] = raw.prepare("SELECT * FROM ai_conversations WHERE conv_type = 'analysis';").all();
+    expect(analysis).toHaveLength(1);
+    const coaching: any[] = raw.prepare("SELECT * FROM ai_conversations WHERE conv_type = 'coaching';").all();
+    expect(coaching).toHaveLength(1);
+  });
+
+  it('갱신 도중에도 대화가 비는 순간이 없다', async () => {
+    const { raw, db } = await freshDb();
+    await replaceConversation(db, 'coaching', [{ role: 'user', content: '처음' }]);
+
+    // 새 행을 넣기 전에 지우면 그 사이에 앱이 죽었을 때 대화가 사라진다.
+    // 항상 최소 한 행이 있어야 한다.
+    const before: any = raw.prepare("SELECT COUNT(*) as c FROM ai_conversations WHERE conv_type = 'coaching';").get();
+    expect(before.c).toBe(1);
+
+    await replaceConversation(db, 'coaching', [{ role: 'user', content: '다음' }]);
+    const after: any = raw.prepare("SELECT COUNT(*) as c FROM ai_conversations WHERE conv_type = 'coaching';").get();
+    expect(after.c).toBe(1);
+    expect((await getLatestConversation(db, 'coaching'))[0].content).toBe('다음');
   });
 });
 

@@ -79,6 +79,31 @@ export async function getLatestConversation(
   }
 }
 
+/**
+ * 대화를 한 행으로 유지하며 갱신한다.
+ *
+ * `saveConversation` 을 매 턴 부르면 그 시점의 **대화 전체**가 새 행으로 쌓인다.
+ * 10턴이면 10행에 메시지 110개 분량이 되는 식으로 턴 수의 제곱만큼 자리를 먹는다.
+ * 읽을 때는 최신 행만 보므로 동작은 멀쩡하지만 옛 행이 계속 남는다.
+ *
+ * 새 행을 먼저 넣고 그보다 오래된 행을 지운다. 순서가 반대면 그 사이에 앱이
+ * 죽었을 때 대화가 통째로 사라진다.
+ */
+export async function replaceConversation(
+  db: SQLiteDatabase,
+  convType: AIConvType,
+  messages: Message[],
+  opts?: { workoutId?: number; contextJson?: string; modelUsed?: string }
+): Promise<number> {
+  const id = await saveConversation(db, convType, messages, opts);
+  await db.runAsync(
+    'DELETE FROM ai_conversations WHERE conv_type = ? AND id < ?',
+    convType,
+    id
+  );
+  return id;
+}
+
 export async function deleteConversations(
   db: SQLiteDatabase,
   convType: AIConvType
